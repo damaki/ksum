@@ -1,0 +1,56 @@
+with "libkeccak";
+
+project Ksum is
+
+   for Source_Dirs use ("src");
+   for Object_Dir use "obj";
+   for Main use ("main.adb");
+   type Build_Kind is
+      ("default");
+   Libkeccak_Build : Build_Kind := external ("LIBKECCAK_BUILD");
+
+   package Builder is
+
+      case Libkeccak_Build is
+
+         when "default" =>
+            for Switches ("ada") use ("-j0");
+      end case;
+   end Builder;
+
+   package Compiler is
+
+      case Libkeccak_Build is
+
+         when "default" =>
+            for Switches ("ada") use ("-O2", "-gnatn", "-funroll-loops", "-fstack-check", "-fcallgraph-info=su,da", "-gnat12", "-ffunction-sections", "-fdata-sections", "-gnata", "-gnato");
+      end case;
+   end Compiler;
+
+   package Linker is
+
+      case Libkeccak_Build is
+
+         when "default" =>
+            for Switches ("ada") use ("-Wl,--gc-sections", "-g", "-s");
+      end case;
+   end Linker;
+
+   case Libkeccak_Build is
+
+      when "default" =>
+         for Exec_Dir use "bin";
+         for Main use ("ksum.adb");
+   end case;
+
+   package Ide is
+
+      case Libkeccak_Build is
+
+         when "default" =>
+            for Documentation_Dir use "doc";
+      end case;
+   end Ide;
+
+end Ksum;
+
