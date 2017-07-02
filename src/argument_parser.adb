@@ -27,18 +27,18 @@ is
 
 
    procedure Extract_Switch_Argument
-     (Arg    : in     String;
-      Switch : in     String;
-      Match  :    out Boolean;
-      First  :    out Natural)
+     (Arg        : in     String;
+      Switch_Str : in     String;
+      Match      :    out Boolean;
+      First      :    out Natural)
    is
 
 
    begin
       --  Check if the switch begins with --switch=
-      if Head (Arg, Switch'Length + 1) = Switch & '=' then
+      if Head (Arg, Switch_Str'Length + 1) = Switch_Str & '=' then
          Match := True;
-         First := Switch'Length + 2;
+         First := Switch_Str'Length + 2;
 
       else
          Match := False;
@@ -101,19 +101,19 @@ is
                            --  the switch is in the format --switch=value
 
                            Extract_Switch_Argument
-                             (Arg    => Arg,
-                              Switch => To_String (Switches (J).Short_Name),
-                              Match  => Match,
-                              First  => Value_First);
+                             (Arg        => Arg,
+                              Switch_Str => To_String (Switches (J).Short_Name),
+                              Match      => Match,
+                              First      => Value_First);
 
                            Short_Name_Used := Match;
 
                            if not Match then
                               Extract_Switch_Argument
-                                (Arg    => Arg,
-                                 Switch => To_String (Switches (J).Long_Name),
-                                 Match  => Match,
-                                 First  => Value_First);
+                                (Arg        => Arg,
+                                 Switch_Str => To_String (Switches (J).Long_Name),
+                                 Match      => Match,
+                                 First      => Value_First);
                            end if;
 
                            if Match then

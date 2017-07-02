@@ -17,11 +17,9 @@
 --  You should have received a copy of the GNU General Public License
 --  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
-with Ada.Streams.Stream_IO;      use Ada.Streams.Stream_IO;
 with Ada.Strings.Unbounded;      use Ada.Strings.Unbounded;
 with Ada.Text_IO;                use Ada.Text_IO;
 with Ada.Text_IO.Text_Streams;   use Ada.Text_IO.Text_Streams;
-with Ada.Unchecked_Deallocation;
 with Configurations;             use Configurations;
 with Hex_Strings;                use Hex_Strings;
 with Stream_Byte_Arrays;         use Stream_Byte_Arrays;
@@ -71,7 +69,7 @@ is
    end Print_Output;
 
 
-   procedure Hash_File (File   : in out Ada.Streams.Stream_IO.File_Type;
+   procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
                         Buffer : in out Keccak.Types.Byte_Array)
    is
       Ctx    : KMAC.Context;
@@ -104,39 +102,5 @@ is
 
       Print_Output (Ctx, Buffer);
    end Hash_File;
-
-
-   procedure Hash_Standard_Input (Buffer : in out Keccak.Types.Byte_Array)
-   is
-      Ctx    : KMAC.Context;
-      Length : Natural;
-
-   begin
-      if Configurations.Key = null then
-         KMAC.Init
-           (Ctx           => Ctx,
-            Key           => Null_Key,
-            Customization => To_String (Configurations.Customization));
-
-      else
-         KMAC.Init
-           (Ctx           => Ctx,
-            Key           => Configurations.Key.all,
-            Customization => To_String (Configurations.Customization));
-      end if;
-
-
-      while not End_Of_File (Standard_Input) loop
-         Read_Byte_Array (Stream (Standard_Input), Buffer, Length);
-
-         if Length = 0 then
-            raise Program_Error with "Could not read from stream";
-         end if;
-
-         KMAC.Update (Ctx, Buffer (Buffer'First .. Buffer'First + (Length - 1)));
-      end loop;
-
-      Print_Output (Ctx, Buffer);
-   end Hash_Standard_Input;
 
 end File_KMAC;

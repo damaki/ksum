@@ -31,9 +31,6 @@ is
      ('0', '1', '2', '3', '4', '5', '6', '7',
       '8', '9', 'a', 'b', 'c', 'd', 'e', 'f');
 
-   subtype Hex_Character is Character
-     with Static_Predicate => Hex_Character in '0' .. '9' | 'a' ..'f' | 'A' .. 'F';
-
    procedure Print_Hex_String (Data : in Byte_Array)
    is
       Buffer : String (1 .. Buffer_Length);

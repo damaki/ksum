@@ -18,9 +18,7 @@
 --  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
 with Ada.Text_IO;       use Ada.Text_IO;
-with Ada.Command_Line;  use Ada.Command_Line;
 with Ada.Strings;       use Ada.Strings;
-with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with Argument_Parser;   use Argument_Parser;
 with Hex_Strings;       use Hex_Strings;
 
@@ -222,18 +220,11 @@ is
        Handler      => Set_Algorithm'Access));
 
 
-   type States is (Switch, Argument);
-
-
-   procedure Parse_Command_Line
-   is
-   begin
-      Argument_Parser.Parse_Command_Line (Switch_Table, Files);
-   end Parse_Command_Line;
-
-
    procedure Set_Key (Short_Name, Long_Name, Arg : in String)
    is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+
    begin
       if Key /= null then
          raise Argument_Error with "error: can't set --key more than once";
@@ -251,11 +242,14 @@ is
 
    procedure Set_Block_Size (Short_Name, Long_Name, Arg : in String)
    is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+
    begin
       Block_Size := Positive'Value (Arg);
 
    exception
-      when Error : Constraint_Error =>
+      when Constraint_Error =>
          raise Argument_Error with "block size must be a positive integer in the range "
            & Positive'Image (Positive'First)
            & " .."
@@ -265,11 +259,14 @@ is
 
    procedure Set_Buffer_Size (Short_Name, Long_Name, Arg : in String)
    is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+
    begin
       Buffer_Size := Positive'Value (Arg);
 
    exception
-      when Error : Constraint_Error =>
+      when Constraint_Error =>
          raise Argument_Error with "buffer size must be a positive integer in the range "
            & Positive'Image (Positive'First)
            & " .."
@@ -279,17 +276,23 @@ is
 
    procedure Set_Output_Size (Short_Name, Long_Name, Arg : in String)
    is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+
    begin
       Output_Length := Long_Long_Integer'Value (Arg);
 
    exception
-      when Error : Constraint_Error =>
+      when Constraint_Error =>
          raise Argument_Error with "output size must be an integer";
    end Set_Output_Size;
 
 
    procedure Set_Read_Mode (Short_Name, Long_Name, Arg : in String)
    is
+      pragma Unreferenced (Long_Name);
+      pragma Unreferenced (Arg);
+
    begin
       if Short_Name = "-t" then
          Read_Mode := Text;
@@ -301,6 +304,10 @@ is
 
    procedure Set_XOF_Mode (Short_Name, Long_Name, Arg : in String)
    is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+      pragma Unreferenced (Arg);
+
    begin
       XOF_Mode := True;
    end Set_XOF_Mode;
@@ -308,6 +315,9 @@ is
 
    procedure Set_Function (Short_Name, Long_Name, Arg : in String)
    is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+
    begin
       Function_Name := To_Unbounded_String (Arg);
    end Set_Function;
@@ -315,6 +325,9 @@ is
 
    procedure Set_Customization (Short_Name, Long_Name, Arg : in String)
    is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+
    begin
       Customization := To_Unbounded_String (Arg);
    end Set_Customization;
@@ -322,6 +335,9 @@ is
 
    procedure Set_Algorithm (Short_Name, Long_Name, Arg : in String)
    is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Arg);
+
       Found : Boolean := False;
 
    begin
@@ -345,6 +361,10 @@ is
 
    procedure Add_Stdin (Short_Name, Long_Name, Arg : in String)
    is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+      pragma Unreferenced (Arg);
+
    begin
       Files.Append (To_Unbounded_String ("-"));
    end Add_Stdin;
@@ -352,6 +372,10 @@ is
 
    procedure Print_Help (Short_Name, Long_Name, Arg : in String)
    is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+      pragma Unreferenced (Arg);
+
       Max_Spaces : constant := 18;
       --  Space after switch short name to the description.
       --  This should be set to be longer than all long switch names.
@@ -390,5 +414,12 @@ is
       end loop;
 
    end Print_Help;
+
+
+   procedure Parse_Command_Line
+   is
+   begin
+      Argument_Parser.Parse_Command_Line (Switch_Table, Files);
+   end Parse_Command_Line;
 
 end Configurations;

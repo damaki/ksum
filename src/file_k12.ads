@@ -17,7 +17,7 @@
 --  You should have received a copy of the GNU General Public License
 --  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
-with Ada.Streams.Stream_IO;
+with Ada.Text_IO;
 with Keccak.Generic_KangarooTwelve;
 with Keccak.Types;
 
@@ -26,10 +26,7 @@ generic
 package File_K12
 is
 
-   procedure Hash_File (File   : in out Ada.Streams.Stream_IO.File_Type;
+   procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
                         Buffer : in out Keccak.Types.Byte_Array);
-
-
-   procedure Hash_Standard_Input (Buffer : in out Keccak.Types.Byte_Array);
 
 end File_K12;

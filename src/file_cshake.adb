@@ -17,7 +17,6 @@
 --  You should have received a copy of the GNU General Public License
 --  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
-with Ada.Streams.Stream_IO;    use Ada.Streams.Stream_IO;
 with Ada.Strings.Unbounded;    use Ada.Strings.Unbounded;
 with Ada.Text_IO;              use Ada.Text_IO;
 with Ada.Text_IO.Text_Streams; use Ada.Text_IO.Text_Streams;
@@ -51,7 +50,7 @@ is
    end Print_Output;
 
 
-   procedure Hash_File (File   : in out Ada.Streams.Stream_IO.File_Type;
+   procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
                         Buffer : in out Keccak.Types.Byte_Array)
    is
       Ctx    : CSHAKE.Context;
@@ -75,29 +74,5 @@ is
 
       Print_Output (Ctx, Buffer);
    end Hash_File;
-
-
-   procedure Hash_Standard_Input (Buffer : in out Keccak.Types.Byte_Array)
-   is
-      Ctx    : CSHAKE.Context;
-      Length : Natural;
-
-   begin
-      CSHAKE.Init (Ctx           => Ctx,
-                   Function_Name => To_String (Configurations.Function_Name),
-                   Customization => To_String (Configurations.Customization));
-
-      while not End_Of_File (Standard_Input) loop
-         Read_Byte_Array (Stream (Standard_Input), Buffer, Length);
-
-         if Length = 0 then
-            raise Program_Error with "Could not read from stream";
-         end if;
-
-         CSHAKE.Update (Ctx, Buffer (Buffer'First .. Buffer'First + (Length - 1)));
-      end loop;
-
-      Print_Output (Ctx, Buffer);
-   end Hash_Standard_Input;
 
 end File_CSHAKE;

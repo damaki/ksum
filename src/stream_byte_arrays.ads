@@ -17,8 +17,7 @@
 --  You should have received a copy of the GNU General Public License
 --  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
-with Ada.Streams;           use Ada.Streams;
-with Ada.Streams.Stream_IO; use Ada.Streams.Stream_IO;
+with Ada.Streams;  use Ada.Streams;
 with Keccak.Types;
 
 package Stream_Byte_Arrays

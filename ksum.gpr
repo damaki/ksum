@@ -9,12 +9,19 @@ project Ksum is
       ("default");
    Libkeccak_Build : Build_Kind := external ("LIBKECCAK_BUILD");
 
+   case Libkeccak_Build is
+
+      when "default" =>
+         for Exec_Dir use "bin";
+         for Main use ("ksum.adb");
+   end case;
+
    package Builder is
 
       case Libkeccak_Build is
 
          when "default" =>
-            for Switches ("ada") use ("-j0");
+            for Switches ("ada") use ("-j0", "-s");
       end case;
    end Builder;
 
@@ -23,7 +30,7 @@ project Ksum is
       case Libkeccak_Build is
 
          when "default" =>
-            for Switches ("ada") use ("-O2", "-gnatn", "-funroll-loops", "-fstack-check", "-fcallgraph-info=su,da", "-gnat12", "-ffunction-sections", "-fdata-sections", "-gnata", "-gnato");
+            for Switches ("ada") use ("-O2", "-gnatn", "-funroll-loops", "-fstack-check", "-fcallgraph-info=su,da", "-gnat12", "-ffunction-sections", "-fdata-sections", "-g", "-gnatwk.kd.h.A.au", "-gnato", "-gnata");
       end case;
    end Compiler;
 
@@ -32,16 +39,9 @@ project Ksum is
       case Libkeccak_Build is
 
          when "default" =>
-            for Switches ("ada") use ("-Wl,--gc-sections", "-g", "-s");
+            for Switches ("ada") use ("-s", "-Wl,--gc-sections");
       end case;
    end Linker;
-
-   case Libkeccak_Build is
-
-      when "default" =>
-         for Exec_Dir use "bin";
-         for Main use ("ksum.adb");
-   end case;
 
    package Ide is
 
@@ -51,6 +51,15 @@ project Ksum is
             for Documentation_Dir use "doc";
       end case;
    end Ide;
+
+   package Binder is
+
+      case Libkeccak_Build is
+
+         when "default" =>
+            for Switches ("ada") use ("-E");
+      end case;
+   end Binder;
 
 end Ksum;
 

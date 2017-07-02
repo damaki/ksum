@@ -21,7 +21,6 @@ with Ada.Command_Line;      use Ada.Command_Line;
 with Ada.Exceptions;        use Ada.Exceptions;
 with Ada.IO_Exceptions;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
-with Ada.Streams.Stream_IO;
 with Ada.Text_IO;           use Ada.Text_IO;
 with Argument_Parser;       use Argument_Parser;
 with Configurations;        use Configurations;
@@ -71,14 +70,9 @@ is
    package CSHAKE128_File_Hashing is new File_CSHAKE (CSHAKE.CSHAKE128);
    package CSHAKE256_File_Hashing is new File_CSHAKE (CSHAKE.CSHAKE256);
 
-   type Byte_Array_Access is access Byte_Array;
-
    type Hash_File_Procedure_Access is access procedure
-     (File   : in out Ada.Streams.Stream_IO.File_Type;
+     (File   : in     Ada.Text_IO.File_Type;
       Buffer : in out Keccak.Types.Byte_Array);
-
-   type Hash_Stdin_Procedure_Access is access procedure
-     (Buffer : in out Keccak.Types.Byte_Array);
 
    Hash_File_Procs : constant array (Algorithm_Names) of Hash_File_Procedure_Access :=
      (Configurations.CSHAKE128       => CSHAKE128_File_Hashing.Hash_File'Access,
@@ -101,32 +95,9 @@ is
       Configurations.SHAKE128        => SHAKE128_File_Hashing.Hash_File'Access,
       Configurations.SHAKE256        => SHAKE256_File_Hashing.Hash_File'Access);
 
-   Hash_Stdin_Procs : constant array (Algorithm_Names) of Hash_Stdin_Procedure_Access :=
-     (Configurations.CSHAKE128       => CSHAKE128_File_Hashing.Hash_Standard_Input'Access,
-      Configurations.CSHAKE256       => CSHAKE256_File_Hashing.Hash_Standard_Input'Access,
-      Configurations.KangarooTwelve  => K12_File_Hashing.Hash_Standard_Input'Access,
-      Configurations.Keccak_224      => Keccak_224_File_Hashing.Hash_Standard_Input'Access,
-      Configurations.Keccak_256      => Keccak_256_File_Hashing.Hash_Standard_Input'Access,
-      Configurations.Keccak_384      => Keccak_384_File_Hashing.Hash_Standard_Input'Access,
-      Configurations.Keccak_512      => Keccak_512_File_Hashing.Hash_Standard_Input'Access,
-      Configurations.KMAC128         => KMAC128_File_Hashing.Hash_Standard_Input'Access,
-      Configurations.KMAC256         => KMAC256_File_Hashing.Hash_Standard_Input'Access,
-      Configurations.ParallelHash128 => ParallelHash128_File_Hashing.Hash_Standard_Input'Access,
-      Configurations.ParallelHash256 => ParallelHash256_File_Hashing.Hash_Standard_Input'Access,
-      Configurations.RawSHAKE128     => RawSHAKE128_File_Hashing.Hash_Standard_Input'Access,
-      Configurations.RawSHAKE256     => RawSHAKE256_File_Hashing.Hash_Standard_Input'Access,
-      Configurations.SHA3_224        => SHA3_224_File_Hashing.Hash_Standard_Input'Access,
-      Configurations.SHA3_256        => SHA3_256_File_Hashing.Hash_Standard_Input'Access,
-      Configurations.SHA3_384        => SHA3_384_File_Hashing.Hash_Standard_Input'Access,
-      Configurations.SHA3_512        => SHA3_512_File_Hashing.Hash_Standard_Input'Access,
-      Configurations.SHAKE128        => SHAKE128_File_Hashing.Hash_Standard_Input'Access,
-      Configurations.SHAKE256        => SHAKE256_File_Hashing.Hash_Standard_Input'Access);
+   File      : Ada.Text_IO.File_Type;
 
-   Hash_File : Hash_File_Procedure_Access := null;
-
-   File      : Ada.Streams.Stream_IO.File_Type;
-
-   Buffer : Byte_Array_Access;
+   Buffer    : Byte_Array_Access;
 
 begin
    Configurations.Parse_Command_Line;
@@ -136,14 +107,14 @@ begin
 
       Buffer := new Byte_Array (1 .. Configurations.Buffer_Size);
 
-   --  For a negative output length, use the default output length for the
-   --  specifed algorithm.
+      --  For a negative output length, use the default output length for the
+      --  specifed algorithm.
       if Output_Length < 0 then
          Output_Length := Default_Output_Length (Algorithm);
       end if;
 
 
-   --  Iterate through each file name and hash it.
+      --  Iterate through each file name and hash it.
       for C in Configurations.Files.Iterate loop
 
          declare
@@ -152,16 +123,18 @@ begin
 
             --  Special case for '-' which means Standard_Input
             if File_Name = "-" then
-               Hash_Stdin_Procs (Configurations.Algorithm) (Buffer.all);
+               Hash_File_Procs (Configurations.Algorithm)
+                 (File   => Standard_Input,
+                  Buffer => Buffer.all);
 
             else
-               Ada.Streams.Stream_IO.Open
+               Ada.Text_IO.Open
                  (File => File,
-                  Mode => Ada.Streams.Stream_IO.In_File,
+                  Mode => Ada.Text_IO.In_File,
                   Name => File_Name,
                   Form => (if Read_Mode = Text
-                           then "text_translation=text"
-                           else "text_translation=binary"));
+                           then "text_translation=yes"
+                           else "text_translation=no"));
 
                declare
                begin
@@ -169,14 +142,14 @@ begin
                     (File   => File,
                      Buffer => Buffer.all);
 
-                  --  Ensure file is closed if an exception occurs.
                exception
                   when others =>
-                     Ada.Streams.Stream_IO.Close (File);
+                     --  Ensure file is closed if any exception occurs.
+                     Ada.Text_IO.Close (File);
                      raise;
                end;
 
-               Ada.Streams.Stream_IO.Close (File);
+               Ada.Text_IO.Close (File);
 
             end if;
 
@@ -207,6 +180,7 @@ exception
    when Error : Argument_Parser.Argument_Error =>
       Put (Standard_Error, "ksum: ");
       Put (Standard_Error, Exception_Message (Error));
+      New_Line (Standard_Error);
       Set_Exit_Status (Failure);
 
    when Error : others =>

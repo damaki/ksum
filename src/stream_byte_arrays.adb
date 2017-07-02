@@ -33,14 +33,13 @@ is
       Item_Size : constant Stream_Element_Offset :=
         Item'Size / Ada.Streams.Stream_Element'Size;
 
-      type SEA_Access is
-        access all Stream_Element_Array (1 .. Item_Size);
+      type SEA_Access is access all Stream_Element_Array (0 .. Item_Size - 1);
 
       function To_SEA_Access is new Ada.Unchecked_Conversion
         (Source => System.Address,
          Target => SEA_Access);
 
-      Item_Access : SEA_Access := To_SEA_Access(Item'Address);
+      Item_Access : constant SEA_Access := To_SEA_Access(Item'Address);
 
       Last : Stream_Element_Offset;
    begin
