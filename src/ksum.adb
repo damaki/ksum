@@ -18,6 +18,7 @@
 --  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
 with Ada.Command_Line;      use Ada.Command_Line;
+with Ada.Directories;       use Ada.Directories;
 with Ada.Exceptions;        use Ada.Exceptions;
 with Ada.IO_Exceptions;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
@@ -133,6 +134,18 @@ begin
                   Buffer => Buffer.all);
 
             else
+               --  GNAT's Open procedure succeeds even when File_Name is a
+               --  directory. A Device_Error exception is then thrown when
+               --  trying to read the File, and the exception does not include
+               --  any meaningful error message.
+               --
+               --  We therefore handle the case of attempting to open a
+               --  directory
+               if Kind (File_Name) = Directory then
+                  raise Ada.IO_Exceptions.Name_Error
+                  with File_Name & ": Is a directory";
+               end if;
+
                Ada.Text_IO.Open
                  (File => File,
                   Mode => Ada.Text_IO.In_File,
@@ -173,8 +186,6 @@ begin
                  Ada.IO_Exceptions.Status_Error
                =>
                Put (Standard_Error, "ksum: ");
-               Put (Standard_Error, File_Name);
-               Put (Standard_Error, ": ");
                Put (Standard_Error, Exception_Message (Error));
                New_Line;
          end;
