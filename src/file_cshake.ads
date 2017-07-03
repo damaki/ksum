@@ -18,11 +18,13 @@
 --  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
 with Ada.Text_IO;
+with File_XOF;
 with Keccak.Generic_CSHAKE;
 with Keccak.Types;
 
 generic
    with package CSHAKE is new Keccak.Generic_CSHAKE (<>);
+   with package SHAKE_File_Hashing  is new File_XOF (<>);
 package File_CSHAKE
 is
 

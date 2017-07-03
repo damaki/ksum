@@ -67,8 +67,13 @@ is
    package SHAKE128_File_Hashing is new File_XOF (SHAKE.SHAKE128);
    package SHAKE256_File_Hashing is new File_XOF (SHAKE.SHAKE256);
 
-   package CSHAKE128_File_Hashing is new File_CSHAKE (CSHAKE.CSHAKE128);
-   package CSHAKE256_File_Hashing is new File_CSHAKE (CSHAKE.CSHAKE256);
+   package CSHAKE128_File_Hashing is new File_CSHAKE
+     (CSHAKE.CSHAKE128,
+      SHAKE128_File_Hashing);
+
+   package CSHAKE256_File_Hashing is new File_CSHAKE
+     (CSHAKE.CSHAKE256,
+      SHAKE256_File_Hashing);
 
    type Hash_File_Procedure_Access is access procedure
      (File   : in     Ada.Text_IO.File_Type;

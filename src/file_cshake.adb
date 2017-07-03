@@ -50,8 +50,8 @@ is
    end Print_Output;
 
 
-   procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
-                        Buffer : in out Keccak.Types.Byte_Array)
+   procedure Hash_File_CSHAKE (File   : in     Ada.Text_IO.File_Type;
+                               Buffer : in out Keccak.Types.Byte_Array)
    is
       Ctx    : CSHAKE.Context;
       Length : Natural;
@@ -73,6 +73,24 @@ is
       end loop;
 
       Print_Output (Ctx, Buffer);
+   end Hash_File_CSHAKE;
+
+
+   procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
+                        Buffer : in out Keccak.Types.Byte_Array)
+   is
+   begin
+      if (Configurations.Customization = Null_Unbounded_String
+          and Configurations.Function_Name = Null_Unbounded_String)
+      then
+         --  In the case where both the customization and function name strings
+         --  are the empty strings, cSHAKE is equivalent to SHAKE.
+         --  See Section 3.3 of NIST SP 800-185 for details.
+         SHAKE_File_Hashing.Hash_File (File, Buffer);
+
+      else
+         Hash_File_CSHAKE (File, Buffer);
+      end if;
    end Hash_File;
 
 end File_CSHAKE;
