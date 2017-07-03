@@ -144,7 +144,9 @@ You will also need to build and install [`libkeccak`](https://github.com/damaki/
   4. `make install`
 
 To build `ksum`:
-  1. `gprbuild -p -P ksum.gpr -XLIBKECCAK_BUILD=default`
+  1. `git clone git@github.com:damaki/ksum.git`
+  2. `cd ksum`
+  3. `gprbuild -p -P ksum.gpr -XLIBKECCAK_BUILD=default`
   
 The `ksum` executable will be placed in the `bin` directory.
 
