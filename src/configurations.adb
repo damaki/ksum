@@ -84,7 +84,7 @@ is
       (Short_Name   => To_Unbounded_String ("-f"),
        Long_Name    => To_Unbounded_String ("--function"),
        Description  => To_Unbounded_String ("Set the function name for cSHAKE"),
-       Has_Argument => False,
+       Has_Argument => True,
        Handler      => Set_Function'Access),
 
       (Short_Name   => To_Unbounded_String ("-t"),
@@ -102,7 +102,7 @@ is
       (Short_Name   => To_Unbounded_String ("-C"),
        Long_Name    => To_Unbounded_String ("--customization"),
        Description  => To_Unbounded_String ("Set the customization string"),
-       Has_Argument => False,
+       Has_Argument => True,
        Handler      => Set_Customization'Access),
 
       (Short_Name   => Null_Unbounded_String,
