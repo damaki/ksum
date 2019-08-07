@@ -18,7 +18,6 @@
 --  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
 with Ada.Text_IO;       use Ada.Text_IO;
-with Ada.Strings;       use Ada.Strings;
 with Argument_Parser;   use Argument_Parser;
 with Hex_Strings;       use Hex_Strings;
 
@@ -120,6 +119,12 @@ is
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--kangarootwelve"),
        Description  => To_Unbounded_String ("Use KangarooTwelve"),
+       Has_Argument => False,
+       Handler      => Set_Algorithm'Access),
+
+      (Short_Name   => Null_Unbounded_String,
+       Long_Name    => To_Unbounded_String ("--marsupilamifourteen"),
+       Description  => To_Unbounded_String ("Use MarsupilamiFourteen"),
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
 
