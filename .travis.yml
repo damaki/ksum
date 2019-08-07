@@ -1,0 +1,14 @@
+language: c
+
+services:
+  - docker
+
+branches:
+  only:
+    master
+
+git:
+  submodules: false
+
+script:
+  - ./travis_build.sh
