@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/damaki/ksum.svg?branch=master)](https://travis-ci.com/damaki/ksum)
+
 # ksum
 
 `ksum` is a program to print checksums using algorithms based on Keccak[1]
@@ -52,9 +54,9 @@ $ ksum --kangarootwelve --output-size=32 file1
 ```
 
 ParallelHash and KMAC (see [3]) have two different output modes based on the
-presence of the `-x` or `--xof` switch. 
-**Without** `--xof` the output checksum depends on the requested output length. 
-I.e. different output lengths will produce different checksums. 
+presence of the `-x` or `--xof` switch.
+**Without** `--xof` the output checksum depends on the requested output length.
+I.e. different output lengths will produce different checksums.
 For example:
 
 ```
@@ -97,7 +99,7 @@ The default key for KMAC is an empty key (length of 0 bytes).
 KangarooTwelve, KMAC, ParallelHash, and cSHAKE all take an optional customization
 string which may be used to produce _domain separation_ among different uses
 of the algorithms. I.e. using different customization strings with the same input
-will produce unrelated outputs. 
+will produce unrelated outputs.
 The customization string is set using the `-C` or `--customization` switches.
 Here's an example:
 
@@ -147,16 +149,16 @@ To build `ksum`:
   1. `git clone git@github.com:damaki/ksum.git`
   2. `cd ksum`
   3. `gprbuild -p -P ksum.gpr -XLIBKECCAK_BUILD=default`
-  
+
 The `ksum` executable will be placed in the `bin` directory.
 
 ## Performance
 
 The performance of `ksum` depends on the selected algorithm. The following table
-shows the time taken to process a 1 GiB file filled with data from `/dev/urandom` 
+shows the time taken to process a 1 GiB file filled with data from `/dev/urandom`
 on my machine (64-bit Linux on an Intel Core i7-2630QM CPU) as measured by the
 `time` program.
-The table also includes the output of other checksum programs for reference 
+The table also includes the output of other checksum programs for reference
 (marked in **bold**). The fastest out of 3 runs (according to the
 "real" value from `time`) is shown.
 
