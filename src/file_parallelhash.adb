@@ -27,10 +27,15 @@ with Stream_Byte_Arrays;       use Stream_Byte_Arrays;
 package body File_ParallelHash
 is
 
+   --------------------
+   --  Print_Output  --
+   --------------------
+
    procedure Print_Output (Ctx    : in out ParallelHash.Context;
                            Buffer : in out Keccak.Types.Byte_Array)
    is
       Remaining : Long_Long_Integer;
+      Pos       : Keccak.Types.Index_Number;
 
    begin
       if Configurations.XOF_Mode then
@@ -44,7 +49,8 @@ is
          end loop;
 
          if Remaining > 0 then
-            ParallelHash.Extract (Ctx, Buffer (Buffer'First .. Buffer'First + Natural (Remaining - 1)));
+            Pos := Buffer'First;
+            ParallelHash.Extract (Ctx, Buffer (Pos .. Pos + Natural (Remaining - 1)));
             Print_Hex_String (Buffer (Buffer'First .. Buffer'First + Natural (Remaining - 1)));
          end if;
 
@@ -68,6 +74,9 @@ is
       end if;
    end Print_Output;
 
+   -----------------
+   --  Hash_File  --
+   -----------------
 
    procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
                         Buffer : in out Keccak.Types.Byte_Array)

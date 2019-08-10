@@ -26,6 +26,10 @@ with Stream_Byte_Arrays;       use Stream_Byte_Arrays;
 package body File_XOF
 is
 
+   --------------------
+   --  Print_Output  --
+   --------------------
+
    procedure Print_Output (Ctx    : in out XOF.Context;
                            Buffer : in out Keccak.Types.Byte_Array)
    is
@@ -47,6 +51,9 @@ is
       end if;
    end Print_Output;
 
+   -----------------
+   --  Hash_File  --
+   -----------------
 
    procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
                         Buffer : in out Keccak.Types.Byte_Array)
@@ -55,7 +62,7 @@ is
       Length : Natural;
 
    begin
-     XOF.Init (Ctx);
+      XOF.Init (Ctx);
 
       while not End_Of_File (File) loop
          Read_Byte_Array (Stream (File), Buffer, Length);

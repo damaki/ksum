@@ -25,7 +25,6 @@ is
    procedure Print_Hex_String (Data : in Byte_Array);
    --  Print a byte array as a hexadecimal string to the standard output.
 
-
    procedure Parse_Hex_String (Str  : in     String;
                                Data :    out Byte_Array)
      with Pre => (Str'Length mod 2 = 0

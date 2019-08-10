@@ -25,13 +25,11 @@ with Keccak.Types;               use Keccak.Types;
 package Configurations
 is
 
-
    type Byte_Array_Access is access Byte_Array;
 
    procedure Deallocate_Byte_Array is new Ada.Unchecked_Deallocation
      (Object => Byte_Array,
       Name   => Byte_Array_Access);
-
 
    type Algorithm_Names is
      (CSHAKE128,
@@ -54,10 +52,10 @@ is
       SHA3_512,
       SHAKE128,
       SHAKE256);
-
+   --  Enumeration of supported algorithms
 
    type Read_Modes is (Text, Binary);
-
+   --  Determines the mode used to read files.
 
    Algorithm_Strings : constant array (Algorithm_Names) of Unbounded_String :=
      (CSHAKE128           => To_Unbounded_String ("cshake128"),
@@ -102,7 +100,7 @@ is
       SHA3_512            => 512 / 8,
       SHAKE128            => 128 / 8,
       SHAKE256            => 256 / 8);
-
+   --  Default output length for each algorith, in bytes.
 
    Read_Mode      : Read_Modes := Text;
    --  Sets the read mode for reading files (text or binary mode).
@@ -128,7 +126,7 @@ is
    --  Block size to use for ParallelHash.
    --  Set using -B or --block-size
 
-   Buffer_Size    : Positive := 64*1024;
+   Buffer_Size    : Positive := 64 * 1024;
    --  Buffer size to use when reading file data.
    --  Set using -z or --buffer-size
 

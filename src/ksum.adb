@@ -122,7 +122,6 @@ begin
          Output_Length := Default_Output_Length (Algorithm);
       end if;
 
-
       --  Iterate through each file name and hash it.
       for C in Configurations.Files.Iterate loop
 

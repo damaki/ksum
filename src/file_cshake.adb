@@ -27,6 +27,9 @@ with Stream_Byte_Arrays;       use Stream_Byte_Arrays;
 package body File_CSHAKE
 is
 
+   --------------------
+   --  Print_Output  --
+   --------------------
 
    procedure Print_Output (Ctx    : in out CSHAKE.Context;
                            Buffer : in out Keccak.Types.Byte_Array)
@@ -49,6 +52,9 @@ is
       end if;
    end Print_Output;
 
+   ------------------------
+   --  Hash_File_CSHAKE  --
+   ------------------------
 
    procedure Hash_File_CSHAKE (File   : in     Ada.Text_IO.File_Type;
                                Buffer : in out Keccak.Types.Byte_Array)
@@ -60,7 +66,6 @@ is
       CSHAKE.Init (Ctx           => Ctx,
                    Function_Name => To_String (Configurations.Function_Name),
                    Customization => To_String (Configurations.Customization));
-
 
       while not End_Of_File (File) loop
          Read_Byte_Array (Stream (File), Buffer, Length);
@@ -75,6 +80,9 @@ is
       Print_Output (Ctx, Buffer);
    end Hash_File_CSHAKE;
 
+   -----------------
+   --  Hash_File  --
+   -----------------
 
    procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
                         Buffer : in out Keccak.Types.Byte_Array)

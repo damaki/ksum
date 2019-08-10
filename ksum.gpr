@@ -30,7 +30,8 @@ project Ksum is
       case Libkeccak_Build is
 
          when "default" =>
-            for Switches ("ada") use ("-O2", "-gnatn", "-funroll-loops", "-fstack-check", "-fcallgraph-info=su,da", "-gnat12", "-ffunction-sections", "-fdata-sections", "-g", "-gnatwk.kd.h.A.au", "-gnato", "-gnata");
+            for Switches ("ada") use ("-O2", "-gnatn", "-funroll-loops", "-fstack-check", "-fcallgraph-info=su,da", "-gnat12", "-ffunction-sections", "-fdata-sections", "-g", "-gnato", "-gnata", "-gnatw.A.V.a.f.h.k.u.wadehku", 
+               "-gnaty3AL7M100Sabcdefhiklnrstu");
       end case;
    end Compiler;
 

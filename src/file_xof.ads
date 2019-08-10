@@ -29,4 +29,9 @@ is
    procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
                         Buffer : in out Keccak.Types.Byte_Array);
 
+private
+
+   procedure Print_Output (Ctx    : in out XOF.Context;
+                           Buffer : in out Keccak.Types.Byte_Array);
+
 end File_XOF;

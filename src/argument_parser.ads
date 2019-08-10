@@ -27,10 +27,8 @@ is
      (Index_Type   => Natural,
       Element_Type => Unbounded_String);
 
-
    type Argument_Handler is
      access not null procedure (Short_Name, Long_Name, Arg : in String);
-
 
    type Switch_Descriptor is record
       Short_Name   : Unbounded_String;
@@ -40,16 +38,31 @@ is
       Handler      : Argument_Handler;
    end record;
 
-
    type Switch_Descriptior_Array is
      array (Natural range <>)
      of Switch_Descriptor;
-
 
    procedure Parse_Command_Line
      (Switches : in Switch_Descriptior_Array;
       Args     : in out Unbounded_Strings_Vectors.Vector);
 
    Argument_Error : exception;
+
+private
+
+   type States is (Switch, Argument);
+
+   procedure Extract_Switch_Argument
+     (Arg        : in     String;
+      Switch_Str : in     String;
+      Match      :    out Boolean;
+      First      :    out Natural);
+
+   procedure Parse_Switch
+     (Switches        : in     Switch_Descriptior_Array;
+      Arg             : in     String;
+      Current_State   : in out States;
+      Current_Switch  : in out Natural;
+      Short_Name_Used :    out Boolean);
 
 end Argument_Parser;

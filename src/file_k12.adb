@@ -26,6 +26,11 @@ with Stream_Byte_Arrays;       use Stream_Byte_Arrays;
 
 package body File_K12
 is
+
+   --------------------
+   --  Print_Output  --
+   --------------------
+
    procedure Print_Output (Ctx    : in out K12.Context;
                            Buffer : in out Keccak.Types.Byte_Array)
    is
@@ -50,6 +55,9 @@ is
       end if;
    end Print_Output;
 
+   -----------------
+   --  Hash_File  --
+   -----------------
 
    procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
                         Buffer : in out Keccak.Types.Byte_Array)
@@ -58,7 +66,7 @@ is
       Length : Natural;
 
    begin
-     K12.Init (Ctx);
+      K12.Init (Ctx);
 
       while not End_Of_File (File) loop
          Read_Byte_Array (Stream (File), Buffer, Length);
@@ -71,6 +79,8 @@ is
       end loop;
 
       Print_Output (Ctx, Buffer);
+
+      pragma Unreferenced (Ctx);
    end Hash_File;
 
 end File_K12;
