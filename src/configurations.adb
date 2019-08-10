@@ -28,6 +28,7 @@ is
    procedure Set_Block_Size    (Short_Name, Long_Name, Arg : in String);
    procedure Set_Buffer_Size   (Short_Name, Long_Name, Arg : in String);
    procedure Set_Output_Size   (Short_Name, Long_Name, Arg : in String);
+   procedure Set_Check_Mode    (Short_Name, Long_Name, Arg : in String);
    procedure Set_Read_Mode     (Short_Name, Long_Name, Arg : in String);
    procedure Set_XOF_Mode      (Short_Name, Long_Name, Arg : in String);
    procedure Set_Function      (Short_Name, Long_Name, Arg : in String);
@@ -117,6 +118,19 @@ is
       when Constraint_Error =>
          raise Argument_Error with "output size must be an integer";
    end Set_Output_Size;
+
+   ----------------------
+   --  Set_Check_Mode  --
+   ----------------------
+
+   procedure Set_Check_Mode (Short_Name, Long_Name, Arg : in String)
+   is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+      pragma Unreferenced (Arg);
+   begin
+      Check_Mode := True;
+   end Set_Check_Mode;
 
    ---------------------
    --  Set_Read_Mode  --
@@ -259,6 +273,24 @@ is
        Has_Argument => False,
        Handler      => Print_Help'Access),
 
+      (Short_Name   => To_Unbounded_String ("-c"),
+       Long_Name    => To_Unbounded_String ("--check"),
+       Description  => To_Unbounded_String ("Read checksums from the FILEs and check them"),
+       Has_Argument => False,
+       Handler      => Set_Check_Mode'Access),
+
+      (Short_Name   => To_Unbounded_String ("-t"),
+       Long_Name    => To_Unbounded_String ("--text"),
+       Description  => To_Unbounded_String ("read in text mode (default)"),
+       Has_Argument => False,
+       Handler      => Set_Read_Mode'Access),
+
+      (Short_Name   => To_Unbounded_String ("-b"),
+       Long_Name    => To_Unbounded_String ("--binary"),
+       Description  => To_Unbounded_String ("read in binary mode"),
+       Has_Argument => False,
+       Handler      => Set_Read_Mode'Access),
+
       (Short_Name   => To_Unbounded_String ("-k"),
        Long_Name    => To_Unbounded_String ("--key"),
        Description  => To_Unbounded_String ("Key used for KMAC as a hex string"),
@@ -294,18 +326,6 @@ is
        Description  => To_Unbounded_String ("Set the function name for cSHAKE"),
        Has_Argument => True,
        Handler      => Set_Function'Access),
-
-      (Short_Name   => To_Unbounded_String ("-t"),
-       Long_Name    => To_Unbounded_String ("--text"),
-       Description  => To_Unbounded_String ("read in text mode (default)"),
-       Has_Argument => False,
-       Handler      => Set_Read_Mode'Access),
-
-      (Short_Name   => To_Unbounded_String ("-b"),
-       Long_Name    => To_Unbounded_String ("--binary"),
-       Description  => To_Unbounded_String ("read in binary mode"),
-       Has_Argument => False,
-       Handler      => Set_Read_Mode'Access),
 
       (Short_Name   => To_Unbounded_String ("-C"),
        Long_Name    => To_Unbounded_String ("--customization"),

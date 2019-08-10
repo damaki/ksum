@@ -106,6 +106,9 @@ is
    --  Sets the read mode for reading files (text or binary mode).
    --  Set using -t or -b
 
+   Check_Mode     : Boolean := False;
+   --  When enabled, reads checksums from the files and check them.
+
    Algorithm      : Algorithm_Names := SHA3_256;
    --  Algorithm to use.
    --  Set using -a or --algorithm or one of the specific flags (e.g. --sha3-256).
