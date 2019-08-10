@@ -23,13 +23,17 @@ with Interfaces;  use Interfaces;
 package body Hex_Strings
 is
 
-   Buffer_Length : constant := 64*1024;
+   Buffer_Length : constant := 64 * 1024;
 
    subtype Length_Number is Natural range 0 .. Buffer_Length;
 
    Hex_Chars : constant array (Byte range 0 .. 15) of Character :=
      ('0', '1', '2', '3', '4', '5', '6', '7',
       '8', '9', 'a', 'b', 'c', 'd', 'e', 'f');
+
+   ------------------------
+   --  Print_Hex_String  --
+   ------------------------
 
    procedure Print_Hex_String (Data : in Byte_Array)
    is
@@ -69,6 +73,9 @@ is
 
    end Print_Hex_String;
 
+   ------------------------
+   --  Parse_Hex_String  --
+   ------------------------
 
    procedure Parse_Hex_String (Str  : in     String;
                                Data :    out Byte_Array)
@@ -85,18 +92,18 @@ is
 
          C := Str (Str_Pos);
          case C is
-            when '0' .. '9' => Upper := Character'Pos (C) - Character'Pos('0');
-            when 'a' .. 'f' => Upper := Character'Pos (C) - Character'Pos('a') + 10;
-            when 'A' .. 'F' => Upper := Character'Pos (C) - Character'Pos('A') + 10;
+            when '0' .. '9' => Upper := Character'Pos (C) - Character'Pos ('0');
+            when 'a' .. 'f' => Upper := Character'Pos (C) - Character'Pos ('a') + 10;
+            when 'A' .. 'F' => Upper := Character'Pos (C) - Character'Pos ('A') + 10;
             when others =>
                raise Constraint_Error with ''' & C & "' is not a valid hexadecimal digit";
          end case;
 
          C := Str (Str_Pos + 1);
          case C is
-            when '0' .. '9' => Lower := Character'Pos (C) - Character'Pos('0');
-            when 'a' .. 'f' => Lower := Character'Pos (C) - Character'Pos('a') + 10;
-            when 'A' .. 'F' => Lower := Character'Pos (C) - Character'Pos('A') + 10;
+            when '0' .. '9' => Lower := Character'Pos (C) - Character'Pos ('0');
+            when 'a' .. 'f' => Lower := Character'Pos (C) - Character'Pos ('a') + 10;
+            when 'A' .. 'F' => Lower := Character'Pos (C) - Character'Pos ('A') + 10;
             when others =>
                raise Constraint_Error with ''' & C & "' is not a valid hexadecimal digit";
          end case;

@@ -36,8 +36,217 @@ is
    procedure Add_Stdin         (Short_Name, Long_Name, Arg : in String);
    procedure Print_Help        (Short_Name, Long_Name, Arg : in String);
 
+   procedure Print_Switches;
 
-   Switch_Table : constant Switch_Descriptior_Array :=
+   ---------------
+   --  Set_Ket  --
+   ---------------
+
+   procedure Set_Key (Short_Name, Long_Name, Arg : in String)
+   is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+
+   begin
+      if Key /= null then
+         raise Argument_Error with "error: can't set --key more than once";
+
+      elsif Arg'Length mod 2 /= 0 then
+         raise Argument_Error with "error: --key length not a multiple of 2";
+
+      else
+         Key := new Byte_Array (1 .. Arg'Length / 2);
+
+         Parse_Hex_String (Arg, Key.all);
+      end if;
+   end Set_Key;
+
+   ----------------------
+   --  Set_Block_Size  --
+   ----------------------
+
+   procedure Set_Block_Size (Short_Name, Long_Name, Arg : in String)
+   is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+
+   begin
+      Block_Size := Positive'Value (Arg);
+
+   exception
+      when Constraint_Error =>
+         raise Argument_Error with "block size must be a positive integer in the range "
+           & Positive'Image (Positive'First)
+           & " .."
+           & Positive'Image (Positive'Last);
+   end Set_Block_Size;
+
+   -----------------------
+   --  Set_Buffer_Size  --
+   -----------------------
+
+   procedure Set_Buffer_Size (Short_Name, Long_Name, Arg : in String)
+   is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+
+   begin
+      Buffer_Size := Positive'Value (Arg);
+
+   exception
+      when Constraint_Error =>
+         raise Argument_Error with "buffer size must be a positive integer in the range "
+           & Positive'Image (Positive'First)
+           & " .."
+           & Positive'Image (Positive'Last);
+   end Set_Buffer_Size;
+
+   -----------------------
+   --  Set_Output_Size  --
+   -----------------------
+
+   procedure Set_Output_Size (Short_Name, Long_Name, Arg : in String)
+   is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+
+   begin
+      Output_Length := Long_Long_Integer'Value (Arg);
+
+   exception
+      when Constraint_Error =>
+         raise Argument_Error with "output size must be an integer";
+   end Set_Output_Size;
+
+   ---------------------
+   --  Set_Read_Mode  --
+   ---------------------
+
+   procedure Set_Read_Mode (Short_Name, Long_Name, Arg : in String)
+   is
+      pragma Unreferenced (Long_Name);
+      pragma Unreferenced (Arg);
+
+   begin
+      if Short_Name = "-t" then
+         Read_Mode := Text;
+      else
+         Read_Mode := Binary;
+      end if;
+   end Set_Read_Mode;
+
+   --------------------
+   --  Set_XOF_Mode  --
+   --------------------
+
+   procedure Set_XOF_Mode (Short_Name, Long_Name, Arg : in String)
+   is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+      pragma Unreferenced (Arg);
+
+   begin
+      XOF_Mode := True;
+   end Set_XOF_Mode;
+
+   --------------------
+   --  Set_Function  --
+   --------------------
+
+   procedure Set_Function (Short_Name, Long_Name, Arg : in String)
+   is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+
+   begin
+      Function_Name := To_Unbounded_String (Arg);
+   end Set_Function;
+
+   -------------------------
+   --  Set_Customization  --
+   -------------------------
+
+   procedure Set_Customization (Short_Name, Long_Name, Arg : in String)
+   is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+
+   begin
+      Customization := To_Unbounded_String (Arg);
+   end Set_Customization;
+
+   ---------------------
+   --  Set_Algorithm  --
+   ---------------------
+
+   procedure Set_Algorithm (Short_Name, Long_Name, Arg : in String)
+   is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Arg);
+
+      Found : Boolean := False;
+
+   begin
+         --  Find the algorithm.
+      for Algo in Algorithm_Names loop
+         if Long_Name = "--" & Algorithm_Strings (Algo) then
+            Algorithm := Algo;
+            Found     := True;
+            exit;
+         end if;
+      end loop;
+
+      if not Found then
+         --  This would only happen if there's a switch configured to call
+         --  this procedure, but we couldn't find a matching algorithm
+         --  string to the switch name.
+         raise Program_Error with "Couldn't find algorithm: " & Long_Name;
+      end if;
+   end Set_Algorithm;
+
+   -----------------
+   --  Add_Stdin  --
+   -----------------
+
+   procedure Add_Stdin (Short_Name, Long_Name, Arg : in String)
+   is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+      pragma Unreferenced (Arg);
+
+   begin
+      Files.Append (To_Unbounded_String ("-"));
+   end Add_Stdin;
+
+   ------------------
+   --  Print_Help  --
+   ------------------
+
+   procedure Print_Help (Short_Name, Long_Name, Arg : in String)
+   is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+      pragma Unreferenced (Arg);
+
+   begin
+      Help_Displayed := True;
+
+      Put_Line ("Usage: ksum [OPTIONS]... [FILE]...");
+      Put_Line ("Print checksums using Keccak-based algorithms");
+      New_Line;
+      Put_Line ("With no FILE, or when FILE is -, read standard input");
+      New_Line;
+      Put_Line ("ksum switches:");
+
+      Print_Switches;
+
+   end Print_Help;
+
+   --------------------
+   --  Switch Table  --
+   --------------------
+
+   Switch_Table : constant Argument_Parser.Switch_Descriptior_Array :=
      ((Short_Name   => To_Unbounded_String ("-"),
        Long_Name    => Null_Unbounded_String,
        Description  => Null_Unbounded_String,
@@ -224,176 +433,30 @@ is
        Has_Argument => False,
        Handler      => Set_Algorithm'Access));
 
+   --------------------------
+   --  Parse_Command_Line  --
+   --------------------------
 
-   procedure Set_Key (Short_Name, Long_Name, Arg : in String)
+   procedure Parse_Command_Line
    is
-      pragma Unreferenced (Short_Name);
-      pragma Unreferenced (Long_Name);
-
    begin
-      if Key /= null then
-         raise Argument_Error with "error: can't set --key more than once";
+      Argument_Parser.Parse_Command_Line (Switch_Table, Files);
+   end Parse_Command_Line;
 
-      elsif Arg'Length mod 2 /= 0 then
-         raise Argument_Error with "error: --key length not a multiple of 2";
+   ----------------------
+   --  Print_Switches  --
+   ----------------------
 
-      else
-         Key := new Byte_Array (1 .. Arg'Length / 2);
-
-         Parse_Hex_String (Arg, Key.all);
-      end if;
-   end Set_Key;
-
-
-   procedure Set_Block_Size (Short_Name, Long_Name, Arg : in String)
+   procedure Print_Switches
    is
-      pragma Unreferenced (Short_Name);
-      pragma Unreferenced (Long_Name);
-
-   begin
-      Block_Size := Positive'Value (Arg);
-
-   exception
-      when Constraint_Error =>
-         raise Argument_Error with "block size must be a positive integer in the range "
-           & Positive'Image (Positive'First)
-           & " .."
-           & Positive'Image (Positive'Last);
-   end Set_Block_Size;
-
-
-   procedure Set_Buffer_Size (Short_Name, Long_Name, Arg : in String)
-   is
-      pragma Unreferenced (Short_Name);
-      pragma Unreferenced (Long_Name);
-
-   begin
-      Buffer_Size := Positive'Value (Arg);
-
-   exception
-      when Constraint_Error =>
-         raise Argument_Error with "buffer size must be a positive integer in the range "
-           & Positive'Image (Positive'First)
-           & " .."
-           & Positive'Image (Positive'Last);
-   end Set_Buffer_Size;
-
-
-   procedure Set_Output_Size (Short_Name, Long_Name, Arg : in String)
-   is
-      pragma Unreferenced (Short_Name);
-      pragma Unreferenced (Long_Name);
-
-   begin
-      Output_Length := Long_Long_Integer'Value (Arg);
-
-   exception
-      when Constraint_Error =>
-         raise Argument_Error with "output size must be an integer";
-   end Set_Output_Size;
-
-
-   procedure Set_Read_Mode (Short_Name, Long_Name, Arg : in String)
-   is
-      pragma Unreferenced (Long_Name);
-      pragma Unreferenced (Arg);
-
-   begin
-      if Short_Name = "-t" then
-         Read_Mode := Text;
-      else
-         Read_Mode := Binary;
-      end if;
-   end Set_Read_Mode;
-
-
-   procedure Set_XOF_Mode (Short_Name, Long_Name, Arg : in String)
-   is
-      pragma Unreferenced (Short_Name);
-      pragma Unreferenced (Long_Name);
-      pragma Unreferenced (Arg);
-
-   begin
-      XOF_Mode := True;
-   end Set_XOF_Mode;
-
-
-   procedure Set_Function (Short_Name, Long_Name, Arg : in String)
-   is
-      pragma Unreferenced (Short_Name);
-      pragma Unreferenced (Long_Name);
-
-   begin
-      Function_Name := To_Unbounded_String (Arg);
-   end Set_Function;
-
-
-   procedure Set_Customization (Short_Name, Long_Name, Arg : in String)
-   is
-      pragma Unreferenced (Short_Name);
-      pragma Unreferenced (Long_Name);
-
-   begin
-      Customization := To_Unbounded_String (Arg);
-   end Set_Customization;
-
-
-   procedure Set_Algorithm (Short_Name, Long_Name, Arg : in String)
-   is
-      pragma Unreferenced (Short_Name);
-      pragma Unreferenced (Arg);
-
-      Found : Boolean := False;
-
-   begin
-         --  Find the algorithm.
-      for Algo in Algorithm_Names loop
-         if Long_Name = "--" & Algorithm_Strings (Algo) then
-            Algorithm := Algo;
-            Found     := True;
-            exit;
-         end if;
-      end loop;
-
-      if not Found then
-         --  This would only happen if there's a switch configured to call
-         --  this procedure, but we couldn't find a matching algorithm
-         --  string to the switch name.
-         raise Program_Error with "Couldn't find algorithm: " & Long_Name;
-      end if;
-   end Set_Algorithm;
-
-
-   procedure Add_Stdin (Short_Name, Long_Name, Arg : in String)
-   is
-      pragma Unreferenced (Short_Name);
-      pragma Unreferenced (Long_Name);
-      pragma Unreferenced (Arg);
-
-   begin
-      Files.Append (To_Unbounded_String ("-"));
-   end Add_Stdin;
-
-
-   procedure Print_Help (Short_Name, Long_Name, Arg : in String)
-   is
-      pragma Unreferenced (Short_Name);
-      pragma Unreferenced (Long_Name);
-      pragma Unreferenced (Arg);
-
-      Max_Spaces : constant := 18;
+      Max_Spaces : Natural := 1;
       --  Space after switch short name to the description.
       --  This should be set to be longer than all long switch names.
 
    begin
-      Help_Displayed := True;
-
-      Put_Line ("Usage: ksum [OPTIONS]... [FILE]...");
-      Put_Line ("Print checksums using Keccak-based algorithms");
-      New_Line;
-      Put_Line ("With no FILE, or when FILE is -, read standard input");
-      New_Line;
-      Put_Line ("ksum switches:");
+      for S of Switch_Table loop
+         Max_Spaces := Natural'Max (Max_Spaces, Length (S.Long_Name));
+      end loop;
 
       for I in Switch_Table'Range loop
 
@@ -417,14 +480,6 @@ is
             Put_Line (To_String (Switch_Table (I).Description));
          end if;
       end loop;
-
-   end Print_Help;
-
-
-   procedure Parse_Command_Line
-   is
-   begin
-      Argument_Parser.Parse_Command_Line (Switch_Table, Files);
-   end Parse_Command_Line;
+   end Print_Switches;
 
 end Configurations;

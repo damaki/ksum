@@ -29,8 +29,8 @@ is
        Length :    out Natural);
    --  Efficiently read bytes from a stream.
    --
-   --  This procedure will read as many bytes as possible to fill the @Item@
-   --  buffer. The @Length@ parameter is set to the number of bytes that were
+   --  This procedure will read as many bytes as possible to fill the Item
+   --  buffer. The Length parameter is set to the number of bytes that were
    --  read.
 
 end Stream_Byte_Arrays;

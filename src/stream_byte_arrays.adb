@@ -28,8 +28,6 @@ is
       Item   : in out Keccak.Types.Byte_Array;
       Length :    out Natural)
    is
-      use type Ada.Streams.Stream_Element_Offset;
-
       Item_Size : constant Stream_Element_Offset :=
         Item'Size / Ada.Streams.Stream_Element'Size;
 
@@ -39,11 +37,11 @@ is
         (Source => System.Address,
          Target => SEA_Access);
 
-      Item_Access : constant SEA_Access := To_SEA_Access(Item'Address);
+      Item_Access : constant SEA_Access := To_SEA_Access (Item'Address);
 
       Last : Stream_Element_Offset;
    begin
-      Ada.Streams.Read(Stream.all, Item_Access.all, Last => Last);
+      Ada.Streams.Read (Stream.all, Item_Access.all, Last => Last);
 
       Length := Natural ((Last - Item_Access.all'First) + 1);
    end Read_Byte_Array;

@@ -26,8 +26,12 @@ with Stream_Byte_Arrays;         use Stream_Byte_Arrays;
 
 package body File_KMAC
 is
+
    Null_Key : constant Keccak.Types.Byte_Array (1 .. 0) := (others => 0);
 
+   --------------------
+   --  Print_Output  --
+   --------------------
 
    procedure Print_Output (Ctx    : in out KMAC.Context;
                            Buffer : in out Keccak.Types.Byte_Array)
@@ -56,7 +60,8 @@ is
          end if;
 
          declare
-            Out_Buffer : Byte_Array_Access := new Keccak.Types.Byte_Array (1 .. Natural (Configurations.Output_Length));
+            Length     : constant Natural  := Natural (Configurations.Output_Length);
+            Out_Buffer : Byte_Array_Access := new Keccak.Types.Byte_Array (1 .. Length);
 
          begin
             KMAC.Finish (Ctx, Out_Buffer.all);
@@ -68,6 +73,9 @@ is
       end if;
    end Print_Output;
 
+   -----------------
+   --  Hash_File  --
+   -----------------
 
    procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
                         Buffer : in out Keccak.Types.Byte_Array)
@@ -88,7 +96,6 @@ is
             Key           => Configurations.Key.all,
             Customization => To_String (Configurations.Customization));
       end if;
-
 
       while not End_Of_File (File) loop
          Read_Byte_Array (Stream (File), Buffer, Length);

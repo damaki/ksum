@@ -31,4 +31,14 @@ is
    procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
                         Buffer : in out Keccak.Types.Byte_Array);
 
+private
+
+   procedure Print_Output (Ctx    : in out CSHAKE.Context;
+                           Buffer : in out Keccak.Types.Byte_Array);
+   --  Print the output of a CSHAKE context.
+
+   procedure Hash_File_CSHAKE (File   : in     Ada.Text_IO.File_Type;
+                               Buffer : in out Keccak.Types.Byte_Array);
+   --  Hash the specified file and print the output
+
 end File_CSHAKE;
