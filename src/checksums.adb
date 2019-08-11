@@ -472,11 +472,8 @@ is
                   case Result is
                      when No_Error =>
                         Checked_Files := Checked_Files + 1;
-                        Ada.Text_IO.Put (File => Ada.Text_IO.Standard_Error,
-                                         Item => To_String (File_Name));
-
-                        Ada.Text_IO.Put_Line (File => Ada.Text_IO.Standard_Error,
-                                              Item => ": OK");
+                        Ada.Text_IO.Put (To_String (File_Name));
+                        Ada.Text_IO.Put_Line (": OK");
 
                      when Format_Error =>
                         Format_Errors := Format_Errors + 1;
