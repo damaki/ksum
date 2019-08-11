@@ -207,7 +207,8 @@ is
                  Ada.IO_Exceptions.Mode_Error |
                  Ada.IO_Exceptions.Device_Error |
                  Ada.IO_Exceptions.Data_Error |
-                 Ada.IO_Exceptions.Status_Error
+                 Ada.IO_Exceptions.Status_Error |
+                 Ada.IO_Exceptions.Use_Error
                =>
                Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, "ksum: ");
                Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, Exception_Message (Error));
@@ -488,6 +489,7 @@ is
                  Ada.IO_Exceptions.Device_Error |
                  Ada.IO_Exceptions.Data_Error |
                  Ada.IO_Exceptions.Status_Error |
+                 Ada.IO_Exceptions.Use_Error |
                  Ada.IO_Exceptions.Name_Error
                =>
                Ada.Text_IO.Put_Line (File => Ada.Text_IO.Standard_Error,
