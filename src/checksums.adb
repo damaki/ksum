@@ -18,6 +18,7 @@
 --  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
 with Ada.Text_IO;
+with Ada.Text_IO.Unbounded_IO;
 with Ada.Command_Line;
 with Ada.Directories;       use Ada.Directories;
 with Ada.Exceptions;        use Ada.Exceptions;
@@ -119,7 +120,7 @@ is
 
    procedure Check_File (File          : in     Ada.Text_IO.File_Type;
                          Buffer        : in out Keccak.Types.Byte_Array;
-                         Expected_Hash : in     String;
+                         Expected_Hash : in     Unbounded_String;
                          Result        :    out Diagnostic);
    --  Computes the checksum over the contents of the specified file, and
    --  compares it against the specified expected hash.
@@ -379,13 +380,13 @@ is
       File_Loop :
       while not Ada.Text_IO.End_Of_File (File) loop
          declare
-            type Local_String_Access is access String;
-
-            Line : constant Local_String_Access := new String'(Ada.Text_IO.Get_Line (File));
+            Line : constant Unbounded_String := Ada.Text_IO.Unbounded_IO.Get_Line (File);
+            File_Name     : Unbounded_String;
+            Expected_Hash : Unbounded_String;
 
             Target_File     : Ada.Text_IO.File_Type;
 
-            Hash_Last       : Integer := Line'First - 1;
+            Hash_Last       : Integer := -1;
 
             File_Name_First : Integer;
 
@@ -396,28 +397,28 @@ is
 
          begin
             --  Ignore blank lines
-            if Line.all'Length > 0 then
+            if Length (Line) > 0 then
 
                --  Find the last hex character in the checksum part of the line
                Line_Loop :
-               for I in Line'Range loop
-                  if Line.all (I) = ' ' then
+               for I in 1 .. Length (Line) loop
+                  if Element (Line, I) = ' ' then
                      Hash_Last := I - 1;
                      exit Line_Loop;
 
-                  elsif not Is_Hexadecimal_Character (Line.all (I)) then
-                     Hash_Last := Line.all'First - 1;
+                  elsif not Is_Hexadecimal_Character (Element (Line, I)) then
+                     Hash_Last := -1;
                      exit Line_Loop;
 
                   end if;
                end loop Line_Loop;
 
-               if Hash_Last < Line'First or Line'Last <= Hash_Last + 1 then
+               if Hash_Last < 1 or Length (Line) <= Hash_Last + 1 then
                   Format_Errors := Format_Errors + 1;
                else
                   --  Determine read mode
                   Read_Mode_Pos := Hash_Last + 2;
-                  case Line.all (Read_Mode_Pos) is
+                  case Element (Line, Read_Mode_Pos) is
                      when ' ' =>
                         File_Mode := Text;
                         Result := No_Error;
@@ -432,26 +433,36 @@ is
 
                   File_Name_First := Hash_Last + 3;
 
+                  Expected_Hash := Unbounded_Slice
+                    (Source => Line,
+                     Low    => 1,
+                     High   => Hash_Last);
+
+                  File_Name := Unbounded_Slice
+                    (Source => Line,
+                     Low    => File_Name_First,
+                     High   => Length (Line));
+
                   --  Check the file
                   if Result /= No_Error then
                      null;
 
-                  elsif Kind (Line.all (File_Name_First .. Line'Last)) = Directory then
+                  elsif Kind (To_String (File_Name)) = Directory then
                      raise Ada.IO_Exceptions.Name_Error
-                     with Line.all (File_Name_First .. Line'Last) & ": Is a directory";
+                     with To_String (File_Name) & ": Is a directory";
 
                   else
                      Ada.Text_IO.Open
                        (File => Target_File,
                         Mode => Ada.Text_IO.In_File,
-                        Name => Line.all (File_Name_First .. Line'Last),
+                        Name => To_String (File_Name),
                         Form => (if File_Mode = Text
                                  then "text_translation=yes"
                                  else "text_translation=no"));
 
                      Check_File (File          => Target_File,
                                  Buffer        => Buffer,
-                                 Expected_Hash => Line.all (Line.all'First .. Hash_Last),
+                                 Expected_Hash => Expected_Hash,
                                  Result        => Result);
 
                      Ada.Text_IO.Close (Target_File);
@@ -462,7 +473,7 @@ is
                      when No_Error =>
                         Checked_Files := Checked_Files + 1;
                         Ada.Text_IO.Put (File => Ada.Text_IO.Standard_Error,
-                                         Item => Line.all (File_Name_First .. Line'Last));
+                                         Item => To_String (File_Name));
 
                         Ada.Text_IO.Put_Line (File => Ada.Text_IO.Standard_Error,
                                               Item => ": OK");
@@ -475,7 +486,7 @@ is
                         Failed_Files := Failed_Files + 1;
 
                         Ada.Text_IO.Put (File => Ada.Text_IO.Standard_Error,
-                                         Item => Line.all (File_Name_First .. Line'Last));
+                                         Item => To_String (File_Name));
 
                         Ada.Text_IO.Put_Line (File => Ada.Text_IO.Standard_Error,
                                               Item => ": FAILED");
@@ -496,7 +507,7 @@ is
                                      Item => Exception_Message (Error));
 
                Ada.Text_IO.Put (File => Ada.Text_IO.Standard_Error,
-                                Item => Line.all (File_Name_First .. Line'Last));
+                                Item => To_String (File_Name));
 
                Ada.Text_IO.Put_Line (File => Ada.Text_IO.Standard_Error,
                                      Item => ": FAILED open or read");
@@ -512,17 +523,18 @@ is
 
    procedure Check_File (File          : in     Ada.Text_IO.File_Type;
                          Buffer        : in out Keccak.Types.Byte_Array;
-                         Expected_Hash : in     String;
+                         Expected_Hash : in     Unbounded_String;
                          Result        :    out Diagnostic)
    is
       Expected_Hash_Byte_Array : Byte_Array_Access := null;
+      Str_Length : constant Natural := Length (Expected_Hash);
 
    begin
-      if Expected_Hash'Length mod 2 /= 0 then
+      if Str_Length mod 2 /= 0 then
          Result := Format_Error;
       else
 
-         Expected_Hash_Byte_Array := new Keccak.Types.Byte_Array (1 .. Expected_Hash'Length / 2);
+         Expected_Hash_Byte_Array := new Keccak.Types.Byte_Array (1 .. Str_Length / 2);
 
          Parse_Hex_String (Str  => Expected_Hash,
                            Data => Expected_Hash_Byte_Array.all);

@@ -38,7 +38,7 @@ is
    procedure Print_Hex_String (Data : in Byte_Array)
    is
       Buffer : String (1 .. Buffer_Length);
-      Length : Length_Number;
+      Len    : Length_Number;
 
       Remaining : Natural := Data'Length;
       Offset    : Natural := 0;
@@ -57,18 +57,18 @@ is
          Offset    := Offset    + (Buffer_Length / 2);
       end loop;
 
-      Length := 0;
+      Len := 0;
       while Remaining > 0 loop
-         Buffer (Length + 1) := Hex_Chars (Shift_Right (Data (Data'First + Offset), 4));
-         Buffer (Length + 2) := Hex_Chars (Data (Data'First + Offset) and 16#0F#);
+         Buffer (Len + 1) := Hex_Chars (Shift_Right (Data (Data'First + Offset), 4));
+         Buffer (Len + 2) := Hex_Chars (Data (Data'First + Offset) and 16#0F#);
 
-         Length    := Length    + 2;
+         Len       := Len       + 2;
          Offset    := Offset    + 1;
          Remaining := Remaining - 1;
       end loop;
 
-      if Length > 0 then
-         Put (Buffer (1 .. Length));
+      if Len > 0 then
+         Put (Buffer (1 .. Len));
       end if;
 
    end Print_Hex_String;
@@ -100,6 +100,48 @@ is
          end case;
 
          C := Str (Str_Pos + 1);
+         case C is
+            when '0' .. '9' => Lower := Character'Pos (C) - Character'Pos ('0');
+            when 'a' .. 'f' => Lower := Character'Pos (C) - Character'Pos ('a') + 10;
+            when 'A' .. 'F' => Lower := Character'Pos (C) - Character'Pos ('A') + 10;
+            when others =>
+               raise Constraint_Error with ''' & C & "' is not a valid hexadecimal digit";
+         end case;
+
+         Data (Data_Pos) := Shift_Left (Upper, 4) or Lower;
+
+         Data_Pos := Data_Pos + 1;
+         Str_Pos  := Str_Pos  + 2;
+      end loop;
+   end Parse_Hex_String;
+
+   ------------------------
+   --  Parse_Hex_String  --
+   ------------------------
+
+   procedure Parse_Hex_String (Str  : in     Unbounded_String;
+                               Data :    out Byte_Array)
+   is
+      Str_Pos  : Positive := 1;
+      Data_Pos : Keccak.Types.Index_Number := Data'First;
+      C        : Character;
+
+      Upper : Keccak.Types.Byte;
+      Lower : Keccak.Types.Byte;
+
+   begin
+      while Str_Pos <= Length (Str) loop
+
+         C := Element (Str, Str_Pos);
+         case C is
+            when '0' .. '9' => Upper := Character'Pos (C) - Character'Pos ('0');
+            when 'a' .. 'f' => Upper := Character'Pos (C) - Character'Pos ('a') + 10;
+            when 'A' .. 'F' => Upper := Character'Pos (C) - Character'Pos ('A') + 10;
+            when others =>
+               raise Constraint_Error with ''' & C & "' is not a valid hexadecimal digit";
+         end case;
+
+         C := Element (Str, Str_Pos + 1);
          case C is
             when '0' .. '9' => Lower := Character'Pos (C) - Character'Pos ('0');
             when 'a' .. 'f' => Lower := Character'Pos (C) - Character'Pos ('a') + 10;
