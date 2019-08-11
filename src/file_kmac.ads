@@ -20,6 +20,7 @@
 with Ada.Text_IO;
 with Keccak.Generic_KMAC;
 with Keccak.Types;
+with Diagnostics;         use Diagnostics;
 
 generic
    with package KMAC is new Keccak.Generic_KMAC (<>);
@@ -29,9 +30,23 @@ is
    procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
                         Buffer : in out Keccak.Types.Byte_Array);
 
+   procedure Check_File (File          : in     Ada.Text_IO.File_Type;
+                         Buffer        : in out Keccak.Types.Byte_Array;
+                         Expected_Hash : in     Keccak.Types.Byte_Array;
+                         Result        :    out Diagnostic);
+
 private
 
    procedure Print_Output (Ctx    : in out KMAC.Context;
                            Buffer : in out Keccak.Types.Byte_Array);
+
+   procedure Check_XOF_Output (Ctx           : in out KMAC.Context;
+                               Buffer        : in out Keccak.Types.Byte_Array;
+                               Expected_Hash : in     Keccak.Types.Byte_Array;
+                               Result        :    out Diagnostic);
+
+   procedure Check_Normal_Output (Ctx           : in out KMAC.Context;
+                                  Expected_Hash : in     Keccak.Types.Byte_Array;
+                                  Result        :    out Diagnostic);
 
 end File_KMAC;

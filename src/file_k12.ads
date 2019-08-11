@@ -20,6 +20,7 @@
 with Ada.Text_IO;
 with Keccak.Generic_KangarooTwelve;
 with Keccak.Types;
+with Diagnostics;                   use Diagnostics;
 
 generic
    with package K12 is new Keccak.Generic_KangarooTwelve (<>);
@@ -28,6 +29,11 @@ is
 
    procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
                         Buffer : in out Keccak.Types.Byte_Array);
+
+   procedure Check_File (File          : in     Ada.Text_IO.File_Type;
+                         Buffer        : in out Keccak.Types.Byte_Array;
+                         Expected_Hash : in     Keccak.Types.Byte_Array;
+                         Result        :    out Diagnostic);
 
 private
 

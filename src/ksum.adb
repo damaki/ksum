@@ -32,6 +32,7 @@ with File_KMAC;
 with File_ParallelHash;
 with File_XOF;
 with Keccak.Types;          use Keccak.Types;
+with Diagnostics;           use Diagnostics;
 
 with CSHAKE;
 with KangarooTwelve;
@@ -82,6 +83,12 @@ is
      (File   : in     Ada.Text_IO.File_Type;
       Buffer : in out Keccak.Types.Byte_Array);
 
+   type Check_File_Procedure_Access is access procedure
+     (File          : in     Ada.Text_IO.File_Type;
+      Buffer        : in out Keccak.Types.Byte_Array;
+      Expected_Hash : in     Keccak.Types.Byte_Array;
+      Result        :    out Diagnostic);
+
    Hash_File_Procs : constant array (Algorithm_Names) of Hash_File_Procedure_Access :=
      (Configurations.CSHAKE128           => CSHAKE128_File_Hashing.Hash_File'Access,
       Configurations.CSHAKE256           => CSHAKE256_File_Hashing.Hash_File'Access,
@@ -103,6 +110,28 @@ is
       Configurations.SHA3_512            => SHA3_512_File_Hashing.Hash_File'Access,
       Configurations.SHAKE128            => SHAKE128_File_Hashing.Hash_File'Access,
       Configurations.SHAKE256            => SHAKE256_File_Hashing.Hash_File'Access);
+
+   Check_File_Procs : constant array (Algorithm_Names) of Check_File_Procedure_Access :=
+     (Configurations.CSHAKE128           => CSHAKE128_File_Hashing.Check_File'Access,
+      Configurations.CSHAKE256           => CSHAKE256_File_Hashing.Check_File'Access,
+      Configurations.KangarooTwelve      => K12_File_Hashing.Check_File'Access,
+      Configurations.MarsupilamiFourteen => M14_File_Hashing.Check_File'Access,
+      Configurations.Keccak_224          => Keccak_224_File_Hashing.Check_File'Access,
+      Configurations.Keccak_256          => Keccak_256_File_Hashing.Check_File'Access,
+      Configurations.Keccak_384          => Keccak_384_File_Hashing.Check_File'Access,
+      Configurations.Keccak_512          => Keccak_512_File_Hashing.Check_File'Access,
+      Configurations.KMAC128             => KMAC128_File_Hashing.Check_File'Access,
+      Configurations.KMAC256             => KMAC256_File_Hashing.Check_File'Access,
+      Configurations.ParallelHash128     => ParallelHash128_File_Hashing.Check_File'Access,
+      Configurations.ParallelHash256     => ParallelHash256_File_Hashing.Check_File'Access,
+      Configurations.RawSHAKE128         => RawSHAKE128_File_Hashing.Check_File'Access,
+      Configurations.RawSHAKE256         => RawSHAKE256_File_Hashing.Check_File'Access,
+      Configurations.SHA3_224            => SHA3_224_File_Hashing.Check_File'Access,
+      Configurations.SHA3_256            => SHA3_256_File_Hashing.Check_File'Access,
+      Configurations.SHA3_384            => SHA3_384_File_Hashing.Check_File'Access,
+      Configurations.SHA3_512            => SHA3_512_File_Hashing.Check_File'Access,
+      Configurations.SHAKE128            => SHAKE128_File_Hashing.Check_File'Access,
+      Configurations.SHAKE256            => SHAKE256_File_Hashing.Check_File'Access);
 
    File      : Ada.Text_IO.File_Type;
 

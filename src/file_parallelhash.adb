@@ -20,7 +20,7 @@
 with Ada.Strings.Unbounded;    use Ada.Strings.Unbounded;
 with Ada.Text_IO;              use Ada.Text_IO;
 with Ada.Text_IO.Text_Streams; use Ada.Text_IO.Text_Streams;
-with Configurations;
+with Configurations;           use Configurations;
 with Hex_Strings;              use Hex_Strings;
 with Stream_Byte_Arrays;       use Stream_Byte_Arrays;
 
@@ -60,8 +60,7 @@ is
          end if;
 
          declare
-            type Byte_Array_Access is access Keccak.Types.Byte_Array;
-            Out_Buffer : constant Byte_Array_Access :=
+            Out_Buffer : Byte_Array_Access :=
               new Keccak.Types.Byte_Array (1 .. Natural (Configurations.Output_Length));
 
          begin
@@ -70,6 +69,8 @@ is
                Data => Out_Buffer.all);
 
             Print_Hex_String (Out_Buffer.all);
+
+            Deallocate_Byte_Array (Out_Buffer);
          end;
       end if;
    end Print_Output;
@@ -102,5 +103,116 @@ is
 
       Print_Output (Ctx, Buffer);
    end Hash_File;
+
+   ------------------
+   --  Check_File  --
+   ------------------
+
+   procedure Check_File (File          : in     Ada.Text_IO.File_Type;
+                         Buffer        : in out Keccak.Types.Byte_Array;
+                         Expected_Hash : in     Keccak.Types.Byte_Array;
+                         Result        :    out Diagnostic)
+   is
+      use type Keccak.Types.Byte_Array;
+
+      Ctx    : ParallelHash.Context;
+      Length : Natural;
+
+   begin
+      ParallelHash.Init
+        (Ctx           => Ctx,
+         Block_Size    => Configurations.Block_Size,
+         Customization => To_String (Configurations.Customization));
+
+      while not End_Of_File (File) loop
+         Read_Byte_Array (Stream (File), Buffer, Length);
+
+         if Length = 0 then
+            raise Program_Error with "Could not read from stream";
+         end if;
+
+         ParallelHash.Update (Ctx, Buffer (Buffer'First .. Buffer'First + (Length - 1)));
+      end loop;
+
+      if Configurations.XOF_Mode then
+         Check_XOF_Output (Ctx, Buffer, Expected_Hash, Result);
+      else
+         Check_Normal_Output (Ctx, Expected_Hash, Result);
+      end if;
+   end Check_File;
+
+   ------------------------
+   --  Check_XOF_Output  --
+   ------------------------
+
+   procedure Check_XOF_Output (Ctx           : in out ParallelHash.Context;
+                               Buffer        : in out Keccak.Types.Byte_Array;
+                               Expected_Hash : in     Keccak.Types.Byte_Array;
+                               Result        :    out Diagnostic)
+   is
+      use type Keccak.Types.Byte_Array;
+
+      Offset    : Natural := 0;
+      Remaining : Natural := Expected_Hash'Length;
+
+      I : Keccak.Types.Index_Number;
+      J : Keccak.Types.Index_Number;
+
+   begin
+      Result := No_Error; --  Unless proven otherwise.
+
+      --  Verify the output in chunks of size: Buffer'Length
+      while Remaining >= Buffer'Length loop
+
+         ParallelHash.Extract (Ctx, Buffer);
+
+         I := Expected_Hash'First + Offset;
+         if Buffer /= Expected_Hash (I .. I + Buffer'Length - 1) then
+            Result := Checksum_Error;
+         end if;
+
+         Offset    := Offset    + Buffer'Length;
+         Remaining := Remaining - Buffer'Length;
+      end loop;
+
+      --  Verify last chunk
+      if Remaining > 0 then
+         ParallelHash.Extract (Ctx, Buffer (Buffer'First .. Buffer'First + Remaining - 1));
+
+         I := Buffer'First;
+         J := Expected_Hash'First + Offset;
+         if Buffer (I .. I + Remaining - 1) = Expected_Hash (J .. J + Remaining - 1) then
+            Result := Checksum_Error;
+         end if;
+      end if;
+   end Check_XOF_Output;
+
+   ---------------------------
+   --  Check_Normal_Output  --
+   ---------------------------
+
+   procedure Check_Normal_Output (Ctx           : in out ParallelHash.Context;
+                                  Expected_Hash : in     Keccak.Types.Byte_Array;
+                                  Result        :    out Diagnostic)
+   is
+      use type Keccak.Types.Byte_Array;
+
+   begin
+      declare
+         Length     : constant Natural  := Expected_Hash'Length;
+         Out_Buffer : Byte_Array_Access := new Keccak.Types.Byte_Array (1 .. Length);
+
+      begin
+         ParallelHash.Finish (Ctx, Out_Buffer.all);
+
+         if Out_Buffer.all = Expected_Hash then
+            Result := No_Error;
+         else
+            Result := Checksum_Error;
+         end if;
+
+         Deallocate_Byte_Array (Out_Buffer);
+      end;
+   end Check_Normal_Output;
 
 end File_ParallelHash;
