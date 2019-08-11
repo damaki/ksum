@@ -1,5 +1,5 @@
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
-with Ada.Text_IO;           use Ada.Text_IO;
+with Ada.Text_IO;
 with Configurations;        use Configurations;
 with File_CSHAKE;
 with File_Hashing;

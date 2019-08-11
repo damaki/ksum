@@ -72,7 +72,7 @@ is
       Digest : Hash.Digest_Type;
 
    begin
-      if Expected_Hash'Length /= Hash.Digest_Size then
+      if Expected_Hash'Length /= Hash.Digest_Type'Length then
          Result := Format_Error;
 
       else

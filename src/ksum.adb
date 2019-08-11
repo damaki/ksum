@@ -32,8 +32,11 @@ begin
 
    --  Don't do anything if the help message was displayed.
    if not Configurations.Help_Displayed then
-      Checksums.Print_Checksums;
-
+      if Configurations.Check_Mode then
+         Checksums.Check_Checksums;
+      else
+         Checksums.Print_Checksums;
+      end if;
    end if;
 
 exception

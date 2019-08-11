@@ -195,7 +195,7 @@ is
 
          I := Buffer'First;
          J := Expected_Hash'First + Offset;
-         if Buffer (I .. I + Remaining - 1) = Expected_Hash (J .. J + Remaining - 1) then
+         if Buffer (I .. I + Remaining - 1) /= Expected_Hash (J .. J + Remaining - 1) then
             Result := Checksum_Error;
          end if;
       end if;
