@@ -38,6 +38,37 @@ $ cat file1 | ksum --sha3-256 -
 be5215abf72333a73b992dafdf4ab59884b948452e0015cfaddaa0b87a0e4515  -
 ```
 
+### Checking checksums
+
+The `-c` or `--check` switch can be used to read checksums from the `FILE`s
+and check them.
+
+For example, to generate a file called `checksums.txt` that contains the
+checksums of `file1`, `file2`, and `file3`:
+
+```
+$ ksum --sha3-256 file1 file2 file3 > checksums.txt
+```
+
+Then, to verify the checksums use the `--check` switch (or its `-c` short
+version):
+```
+$ ksum --sha3-256 --check checksums.txt
+```
+
+`ksum` exits with a status of 0 if all checksums are valid. Otherwise,
+`ksum` prints diagnostic messages and exits with a non-zero status.
+Here's an example error output:
+```
+$ ksum --sha3-256 --check checksums.txt
+file2: FAILED
+ksum: WARNING: checksums.txt: 1 computed checksum did NOT match
+```
+
+Note that `ksum` must be invoked with the same settings that was used to
+generate the checksums. This is particularly important for algorithms
+that are customizable, e.g. KMAC, ParallelHash, cSHAKE.
+
 ### Variable output length
 
 Several of the algorithms supported by `ksum` can output a variable length
@@ -187,7 +218,6 @@ The table also includes the output of other checksum programs for reference
 ## TODO
 
 Things not yet implemented:
-  * Check mode to verify files against pre-generated checksums.
   * Testing against test vectors.
     (although `libkeccak` itself is tested against test vectors)
 
