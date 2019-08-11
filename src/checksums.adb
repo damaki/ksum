@@ -1,12 +1,103 @@
+-------------------------------------------------------------------------------
+--  Copyright (c) 2019, Daniel King
+--  All rights reserved.
+--
+--  This file is part of ksum.
+--
+--  ksum is free software: you can redistribute it and/or modify
+--  it under the terms of the GNU General Public License as published by
+--  the Free Software Foundation, either version 3 of the License, or
+--  (at your option) any later version.
+--
+--  ksum is distributed in the hope that it will be useful,
+--  but WITHOUT ANY WARRANTY; without even the implied warranty of
+--  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--  GNU General Public License for more details.
+--
+--  You should have received a copy of the GNU General Public License
+--  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
+-------------------------------------------------------------------------------
+with Ada.Text_IO;
 with Ada.Command_Line;
 with Ada.Directories;       use Ada.Directories;
 with Ada.Exceptions;        use Ada.Exceptions;
 with Ada.IO_Exceptions;
 
+with Configurations;        use Configurations;
+with Diagnostics;           use Diagnostics;
+
 with Hex_Strings;           use Hex_Strings;
+
+with Keccak.Types;          use Keccak.Types;
 
 package body Checksums
 is
+
+   -----------------------
+   --  Hash_File_Procs  --
+   -----------------------
+   --  This lookup table is used to print the checksum of a specific file
+   --  based on the desired algorithm.
+
+   type Hash_File_Procedure_Access is access procedure
+     (File   : in     Ada.Text_IO.File_Type;
+      Buffer : in out Keccak.Types.Byte_Array);
+
+   Hash_File_Procs : constant array (Algorithm_Names) of Hash_File_Procedure_Access :=
+     (Configurations.CSHAKE128           => CSHAKE128_File_Hashing.Hash_File'Access,
+      Configurations.CSHAKE256           => CSHAKE256_File_Hashing.Hash_File'Access,
+      Configurations.KangarooTwelve      => K12_File_Hashing.Hash_File'Access,
+      Configurations.MarsupilamiFourteen => M14_File_Hashing.Hash_File'Access,
+      Configurations.Keccak_224          => Keccak_224_File_Hashing.Hash_File'Access,
+      Configurations.Keccak_256          => Keccak_256_File_Hashing.Hash_File'Access,
+      Configurations.Keccak_384          => Keccak_384_File_Hashing.Hash_File'Access,
+      Configurations.Keccak_512          => Keccak_512_File_Hashing.Hash_File'Access,
+      Configurations.KMAC128             => KMAC128_File_Hashing.Hash_File'Access,
+      Configurations.KMAC256             => KMAC256_File_Hashing.Hash_File'Access,
+      Configurations.ParallelHash128     => ParallelHash128_File_Hashing.Hash_File'Access,
+      Configurations.ParallelHash256     => ParallelHash256_File_Hashing.Hash_File'Access,
+      Configurations.RawSHAKE128         => RawSHAKE128_File_Hashing.Hash_File'Access,
+      Configurations.RawSHAKE256         => RawSHAKE256_File_Hashing.Hash_File'Access,
+      Configurations.SHA3_224            => SHA3_224_File_Hashing.Hash_File'Access,
+      Configurations.SHA3_256            => SHA3_256_File_Hashing.Hash_File'Access,
+      Configurations.SHA3_384            => SHA3_384_File_Hashing.Hash_File'Access,
+      Configurations.SHA3_512            => SHA3_512_File_Hashing.Hash_File'Access,
+      Configurations.SHAKE128            => SHAKE128_File_Hashing.Hash_File'Access,
+      Configurations.SHAKE256            => SHAKE256_File_Hashing.Hash_File'Access);
+
+   type Check_File_Procedure_Access is access procedure
+     (File          : in     Ada.Text_IO.File_Type;
+      Buffer        : in out Keccak.Types.Byte_Array;
+      Expected_Hash : in     Keccak.Types.Byte_Array;
+      Result        :    out Diagnostic);
+
+   ------------------------
+   --  Check_File_Procs  --
+   ------------------------
+   --  This lookup table is used to check the checksum of a specific file
+   --  based on the desired algorithm.
+
+   Check_File_Procs : constant array (Algorithm_Names) of Check_File_Procedure_Access :=
+     (Configurations.CSHAKE128           => CSHAKE128_File_Hashing.Check_File'Access,
+      Configurations.CSHAKE256           => CSHAKE256_File_Hashing.Check_File'Access,
+      Configurations.KangarooTwelve      => K12_File_Hashing.Check_File'Access,
+      Configurations.MarsupilamiFourteen => M14_File_Hashing.Check_File'Access,
+      Configurations.Keccak_224          => Keccak_224_File_Hashing.Check_File'Access,
+      Configurations.Keccak_256          => Keccak_256_File_Hashing.Check_File'Access,
+      Configurations.Keccak_384          => Keccak_384_File_Hashing.Check_File'Access,
+      Configurations.Keccak_512          => Keccak_512_File_Hashing.Check_File'Access,
+      Configurations.KMAC128             => KMAC128_File_Hashing.Check_File'Access,
+      Configurations.KMAC256             => KMAC256_File_Hashing.Check_File'Access,
+      Configurations.ParallelHash128     => ParallelHash128_File_Hashing.Check_File'Access,
+      Configurations.ParallelHash256     => ParallelHash256_File_Hashing.Check_File'Access,
+      Configurations.RawSHAKE128         => RawSHAKE128_File_Hashing.Check_File'Access,
+      Configurations.RawSHAKE256         => RawSHAKE256_File_Hashing.Check_File'Access,
+      Configurations.SHA3_224            => SHA3_224_File_Hashing.Check_File'Access,
+      Configurations.SHA3_256            => SHA3_256_File_Hashing.Check_File'Access,
+      Configurations.SHA3_384            => SHA3_384_File_Hashing.Check_File'Access,
+      Configurations.SHA3_512            => SHA3_512_File_Hashing.Check_File'Access,
+      Configurations.SHAKE128            => SHAKE128_File_Hashing.Check_File'Access,
+      Configurations.SHAKE256            => SHAKE256_File_Hashing.Check_File'Access);
 
    procedure Check_Checksums_File (File          : in     Ada.Text_IO.File_Type;
                                    Buffer        : in out Keccak.Types.Byte_Array;
@@ -14,11 +105,24 @@ is
                                    Format_Errors : in out Natural;
                                    Failed_Files  : in out Natural;
                                    IO_Errors     : in out Natural);
+   --  Check each checksum in a file containing a list of checksums and file names.
+   --
+   --  This iterates through each line in a file and for each well-formatted
+   --  line, computes the actual checksum of the named file against the expected
+   --  checksum.
+   --
+   --  Lines are expected in the format:
+   --  <checksum> <space> <space|asteisk> <file name>
+   --
+   --  For example:
+   --  e7d29df82428e8de6273a5a95f26a526ca9cdf7a2428e06e42864e84b3e37fda *filename.txt
 
    procedure Check_File (File          : in     Ada.Text_IO.File_Type;
                          Buffer        : in out Keccak.Types.Byte_Array;
                          Expected_Hash : in     String;
                          Result        :    out Diagnostic);
+   --  Computes the checksum over the contents of the specified file, and
+   --  compares it against the specified expected hash.
 
    function Is_Hexadecimal_Character (C : in Character) return Boolean
    is (C in '0' .. '9' | 'a' .. 'f' | 'A' .. 'F')
@@ -328,7 +432,14 @@ is
                   File_Name_First := Hash_Last + 3;
 
                   --  Check the file
-                  if Result = No_Error then
+                  if Result /= No_Error then
+                     null;
+
+                  elsif Kind (Line.all (File_Name_First .. Line'Last)) = Directory then
+                     raise Ada.IO_Exceptions.Name_Error
+                     with Line.all (File_Name_First .. Line'Last) & ": Is a directory";
+
+                  else
                      Ada.Text_IO.Open
                        (File => Target_File,
                         Mode => Ada.Text_IO.In_File,
@@ -376,10 +487,17 @@ is
                  Ada.IO_Exceptions.Mode_Error |
                  Ada.IO_Exceptions.Device_Error |
                  Ada.IO_Exceptions.Data_Error |
-                 Ada.IO_Exceptions.Status_Error
+                 Ada.IO_Exceptions.Status_Error |
+                 Ada.IO_Exceptions.Name_Error
                =>
                Ada.Text_IO.Put_Line (File => Ada.Text_IO.Standard_Error,
                                      Item => Exception_Message (Error));
+
+               Ada.Text_IO.Put (File => Ada.Text_IO.Standard_Error,
+                                Item => Line.all (File_Name_First .. Line'Last));
+
+               Ada.Text_IO.Put_Line (File => Ada.Text_IO.Standard_Error,
+                                     Item => ": FAILED open or read");
 
                IO_Errors := IO_Errors + 1;
          end;
