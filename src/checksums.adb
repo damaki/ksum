@@ -12,7 +12,8 @@ is
                                    Buffer        : in out Keccak.Types.Byte_Array;
                                    Checked_Files : in out Natural;
                                    Format_Errors : in out Natural;
-                                   Failed_Files  : in out Natural);
+                                   Failed_Files  : in out Natural;
+                                   IO_Errors     : in out Natural);
 
    procedure Check_File (File          : in     Ada.Text_IO.File_Type;
                          Buffer        : in out Keccak.Types.Byte_Array;
@@ -107,6 +108,8 @@ is
                Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, "ksum: ");
                Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, Exception_Message (Error));
                Ada.Text_IO.New_Line;
+
+               Ada.Command_Line.Set_Exit_Status (1);
          end;
       end loop;
 
@@ -130,6 +133,7 @@ is
       Checked_Files : Natural;
       Format_Errors : Natural;
       Failed_Files  : Natural;
+      IO_Errors     : Natural;
 
    begin
       Buffer := new Byte_Array (1 .. Configurations.Buffer_Size);
@@ -146,6 +150,7 @@ is
          Checked_Files := 0;
          Format_Errors := 0;
          Failed_Files  := 0;
+         IO_Errors     := 0;
 
          --  Special case for '-' which means Standard_Input
          if File_Name = "-" then
@@ -153,7 +158,8 @@ is
                                   Buffer        => Buffer.all,
                                   Checked_Files => Checked_Files,
                                   Format_Errors => Format_Errors,
-                                  Failed_Files  => Failed_Files);
+                                  Failed_Files  => Failed_Files,
+                                  IO_Errors     => IO_Errors);
 
          else
             --  GNAT's Open procedure succeeds even when File_Name is a
@@ -182,7 +188,8 @@ is
                                      Buffer        => Buffer.all,
                                      Checked_Files => Checked_Files,
                                      Format_Errors => Format_Errors,
-                                     Failed_Files  => Failed_Files);
+                                     Failed_Files  => Failed_Files,
+                                     IO_Errors     => IO_Errors);
 
             exception
                when others =>
@@ -195,18 +202,10 @@ is
 
          end if;
 
-         if Checked_Files = 0 then
-            Ada.Text_IO.Put ("ksum: ");
-            Ada.Text_IO.Put (To_String (File_Name));
-            Ada.Text_IO.Put (": no properly formatted ");
-            Ada.Text_IO.Put (To_String (Algorithm_Strings (Configurations.Algorithm)));
-            Ada.Text_IO.Put_Line (" checksum lines found");
-         end if;
-
          if Format_Errors > 0 then
-            Ada.Text_IO.Put ("ksum: ");
+            Ada.Text_IO.Put ("ksum: WARNING: ");
             Ada.Text_IO.Put (To_String (File_Name));
-            Ada.Text_IO.Put (": WARNING:");
+            Ada.Text_IO.Put (":");
             Ada.Text_IO.Put (Integer'Image (Format_Errors));
             if Format_Errors > 1 then
                Ada.Text_IO.Put_Line (" lines are improperly formatted");
@@ -218,15 +217,37 @@ is
          if Failed_Files > 0 then
             Ada.Command_Line.Set_Exit_Status (1);
 
-            Ada.Text_IO.Put ("ksum: ");
+            Ada.Text_IO.Put ("ksum: WARNING: ");
             Ada.Text_IO.Put (To_String (File_Name));
-            Ada.Text_IO.Put (": WARNING:");
+            Ada.Text_IO.Put (":");
             Ada.Text_IO.Put (Integer'Image (Failed_Files));
-            if Format_Errors > 1 then
+            if Failed_Files > 1 then
                Ada.Text_IO.Put_Line (" computed checksums did NOT match");
             else
                Ada.Text_IO.Put_Line (" computed checksum did NOT match");
             end if;
+         end if;
+
+         if IO_Errors > 0 then
+            Ada.Command_Line.Set_Exit_Status (1);
+
+            Ada.Text_IO.Put ("ksum: WARNING: ");
+            Ada.Text_IO.Put (To_String (File_Name));
+            Ada.Text_IO.Put (":");
+            Ada.Text_IO.Put (Integer'Image (IO_Errors));
+            if IO_Errors > 1 then
+               Ada.Text_IO.Put_Line (" files could not be opened or read");
+            else
+               Ada.Text_IO.Put_Line (" file could not be opened or read");
+            end if;
+         end if;
+
+         if Checked_Files = 0 then
+            Ada.Text_IO.Put ("ksum: ");
+            Ada.Text_IO.Put (To_String (File_Name));
+            Ada.Text_IO.Put (": no properly formatted ");
+            Ada.Text_IO.Put (To_String (Algorithm_Strings (Configurations.Algorithm)));
+            Ada.Text_IO.Put_Line (" checksum lines found");
          end if;
       end loop;
 
@@ -246,7 +267,8 @@ is
                                    Buffer        : in out Keccak.Types.Byte_Array;
                                    Checked_Files : in out Natural;
                                    Format_Errors : in out Natural;
-                                   Failed_Files  : in out Natural)
+                                   Failed_Files  : in out Natural;
+                                   IO_Errors     : in out Natural)
    is
    begin
       File_Loop :
@@ -310,7 +332,7 @@ is
                      Ada.Text_IO.Open
                        (File => Target_File,
                         Mode => Ada.Text_IO.In_File,
-                        Name => Line.all (Hash_Last + 3 .. Line'Last),
+                        Name => Line.all (File_Name_First .. Line'Last),
                         Form => (if File_Mode = Text
                                  then "text_translation=yes"
                                  else "text_translation=no"));
@@ -327,8 +349,11 @@ is
                   case Result is
                      when No_Error =>
                         Checked_Files := Checked_Files + 1;
-                        Ada.Text_IO.Put (Line.all (File_Name_First .. Line'Last));
-                        Ada.Text_IO.Put_Line (": OK");
+                        Ada.Text_IO.Put (File => Ada.Text_IO.Standard_Error,
+                                         Item => Line.all (File_Name_First .. Line'Last));
+
+                        Ada.Text_IO.Put_Line (File => Ada.Text_IO.Standard_Error,
+                                              Item => ": OK");
 
                      when Format_Error =>
                         Format_Errors := Format_Errors + 1;
@@ -336,11 +361,27 @@ is
                      when Checksum_Error =>
                         Checked_Files := Checked_Files + 1;
                         Failed_Files := Failed_Files + 1;
-                        Ada.Text_IO.Put (Line.all (File_Name_First .. Line'Last));
-                        Ada.Text_IO.Put_Line (": FAILED");
+
+                        Ada.Text_IO.Put (File => Ada.Text_IO.Standard_Error,
+                                         Item => Line.all (File_Name_First .. Line'Last));
+
+                        Ada.Text_IO.Put_Line (File => Ada.Text_IO.Standard_Error,
+                                              Item => ": FAILED");
                   end case;
                end if;
             end if;
+
+         exception
+            when Error : Ada.IO_Exceptions.Name_Error |
+                 Ada.IO_Exceptions.Mode_Error |
+                 Ada.IO_Exceptions.Device_Error |
+                 Ada.IO_Exceptions.Data_Error |
+                 Ada.IO_Exceptions.Status_Error
+               =>
+               Ada.Text_IO.Put_Line (File => Ada.Text_IO.Standard_Error,
+                                     Item => Exception_Message (Error));
+
+               IO_Errors := IO_Errors + 1;
          end;
       end loop File_Loop;
    end Check_Checksums_File;
