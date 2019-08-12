@@ -7,7 +7,7 @@ def load(filename, last=''):
         vector = {}
 
         for line in f:
-            m = re.match('^(\w+)\s*\=\s*(.+)$', line)
+            m = re.match('^(\w+)\s*\=\s*(.*)$', line)
             if m:
                 vector[m.group(1)] = m.group(2).strip()
 

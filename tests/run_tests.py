@@ -31,45 +31,10 @@ algorithms = [
     "--shake256",
 ]
 
-class TestAlgorithms(unittest.TestCase):
-
-    def test_loopback(self):
-        """
-        Test that ksum can verify checksums that it generated.
-
-        This also verifies that the output of ksum --check is in
-        the expected format.
-        """
-        for algo in algorithms:
-            with self.subTest(algorithm=algo):
-                with tempfile.NamedTemporaryFile() as tmp:
-                    # Write some temporary data
-                    tmp.write("The quick brown fox jumps over the lazy dog.".encode('LATIN-1'))
-                    tmp.flush()
-
-                    # Generate a checksum
-                    p = subprocess.run(
-                        args = ["../bin/ksum", algo, tmp.name],
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE
-                    )
-                    self.assertEqual(p.returncode, 0)
-                    self.assertEqual(p.stderr, b'')
-
-                    # Save the checksum to a file
-                    with tempfile.NamedTemporaryFile() as tmp_checksum:
-                        tmp_checksum.write(p.stdout)
-                        tmp_checksum.flush()
-
-                        # Verify the checksum
-                        p = subprocess.run(
-                            args = ["../bin/ksum", algo, "-c", tmp_checksum.name],
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE
-                        )
-                        self.assertEqual(p.returncode, 0)
-                        self.assertEqual(p.stdout, (tmp.name + ": OK\n").encode('LATIN-1'))
-                        self.assertEqual(p.stderr, b'')
+class TestVectors(unittest.TestCase):
+    """
+    Test cases to check the output of ksum against various test vectors.
+    """
 
     def test_sha3_224_shortmsgkat_vectors(self):
         vectors = testvectors.load('vectors/ShortMsgKAT_SHA3-224.txt')
@@ -150,6 +115,14 @@ class TestAlgorithms(unittest.TestCase):
     def test_parallelhashxof256_vectors(self):
         vectors = testvectors.load('vectors/ParallelHashXOF256_samples.txt')
         self.run_parallelhash_vector(vectors, "--parallelhash256", xof=True)
+
+    def test_cshake128_vectors(self):
+        vectors = testvectors.load('vectors/cSHAKE_128_samples.txt')
+        self.run_cshake_vector(vectors, "--cshake128")
+
+    def test_cshake256_vectors(self):
+        vectors = testvectors.load('vectors/cSHAKE_256_samples.txt')
+        self.run_cshake_vector(vectors, "--cshake256")
 
     def run_msgkat_vector(self, vectors, algorithm):
         """
@@ -232,6 +205,57 @@ class TestAlgorithms(unittest.TestCase):
                         self.assertEqual(p.stdout, expected_stdout.encode('LATIN-1'))
                         self.assertEqual(p.stderr, b'')
 
+    def run_cshake_vector(self, vectors, algorithm):
+        """
+        Helper to invoke ksum on a KMAC test vectors file and check the output.
+        """
+        self.assertGreater(len(vectors), 0)
+        for v in vectors:
+            # Only run test vectors with a length of a multiple of 8 bits
+            in_bit_len = int(v['InLen'])
+            out_bit_len = int(v['OutLen'])
+            if (in_bit_len % 8 == 0) and (out_bit_len % 8 == 0):
+                with self.subTest(vector=v):
+                    with tempfile.NamedTemporaryFile() as tmp:
+                        # Write the Msg to the file
+                        msg = binascii.unhexlify(v['In'])
+                        tmp.write(msg[0:in_bit_len // 8])
+                        tmp.flush()
+
+                        args = [
+                            "../bin/ksum",
+                            algorithm,
+                            "-n",
+                            str(out_bit_len // 8),
+                            "--binary"
+                        ]
+
+                        # Add customization string, if not empty
+                        custom = v['S'].replace('"', '')
+                        if custom != '':
+                            args.append("-C")
+                            args.append(custom)
+
+                        # Add function name string, if not empty
+                        funcname = v['N'].replace('"', '')
+                        if funcname != '':
+                            args.append("-f")
+                            args.append(funcname)
+
+                        args.append(tmp.name)
+
+                        # Generate the checksum
+                        p = subprocess.run(
+                            args,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE
+                        )
+                        expected_stdout = v['Out'].lower() + ' *' + tmp.name + '\n'
+
+                        self.assertEqual(p.returncode, 0)
+                        self.assertEqual(p.stdout, expected_stdout.encode('LATIN-1'))
+                        self.assertEqual(p.stderr, b'')
+
     def run_parallelhash_vector(self, vectors, algorithm, xof=False):
         """
         Helper to invoke ksum on a ParallelHash test vectors file and check the output.
@@ -278,6 +302,49 @@ class TestAlgorithms(unittest.TestCase):
                     self.assertEqual(p.returncode, 0)
                     self.assertEqual(p.stdout, expected_stdout.encode('LATIN-1'))
                     self.assertEqual(p.stderr, b'')
+
+class TestCheckMode(unittest.TestCase):
+    """
+    Tests to check the checksum verification capabilities of ksum
+    """
+
+    def test_loopback(self):
+        """
+        Test that ksum can verify checksums that it generated.
+
+        This also verifies that the output of ksum --check is in
+        the expected format.
+        """
+        for algo in algorithms:
+            with self.subTest(algorithm=algo):
+                with tempfile.NamedTemporaryFile() as tmp:
+                    # Write some temporary data
+                    tmp.write("The quick brown fox jumps over the lazy dog.".encode('LATIN-1'))
+                    tmp.flush()
+
+                    # Generate a checksum
+                    p = subprocess.run(
+                        args = ["../bin/ksum", algo, tmp.name],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE
+                    )
+                    self.assertEqual(p.returncode, 0)
+                    self.assertEqual(p.stderr, b'')
+
+                    # Save the checksum to a file
+                    with tempfile.NamedTemporaryFile() as tmp_checksum:
+                        tmp_checksum.write(p.stdout)
+                        tmp_checksum.flush()
+
+                        # Verify the checksum
+                        p = subprocess.run(
+                            args = ["../bin/ksum", algo, "-c", tmp_checksum.name],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE
+                        )
+                        self.assertEqual(p.returncode, 0)
+                        self.assertEqual(p.stdout, (tmp.name + ": OK\n").encode('LATIN-1'))
+                        self.assertEqual(p.stderr, b'')
 
 if __name__ == '__main__':
     unittest.main()
