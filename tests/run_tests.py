@@ -2,6 +2,7 @@
 import binascii
 import os
 import os.path
+import re
 import subprocess
 import tempfile
 import testvectors
@@ -345,6 +346,120 @@ class TestCheckMode(unittest.TestCase):
                         self.assertEqual(p.returncode, 0)
                         self.assertEqual(p.stdout, (tmp.name + ": OK\n").encode('LATIN-1'))
                         self.assertEqual(p.stderr, b'')
+
+    def test_invalid_checksum(self):
+        """
+        Test that ksum correctly detects invalid checksums.
+
+        This tests all supported algorithms to test that they can properly detect when a
+        checksum is corrupted. For each algorithm, the test is repeated with different bytes
+        being corrupted.
+        """
+        for algo in algorithms:
+            with self.subTest(algorithm=algo):
+                with tempfile.NamedTemporaryFile() as tmp:
+                    # Write some temporary data
+                    tmp.write("The quick brown fox jumps over the lazy dog.".encode('LATIN-1'))
+                    tmp.flush()
+
+                    # Generate a checksum
+                    p = subprocess.run(
+                        args = ["../bin/ksum", algo, tmp.name],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE
+                    )
+                    self.assertEqual(p.returncode, 0)
+                    self.assertEqual(p.stderr, b'')
+
+                    # Corrupt the checksum by changing the last byte.
+                    m = re.match(r'(\w+) (.+)$', p.stdout.decode('LATIN-1'))
+                    self.assertIsNotNone(m)
+                    checksum = m.group(1)
+                    checksum = binascii.unhexlify(checksum)
+
+                    # Corrupt every checksum byte individually
+                    # This checks that ksum actually considers every byte
+                    for n in range(len(checksum)):
+                        with self.subTest(n=n):
+                            corrupted = bytearray(checksum)
+                            corrupted[n] = (corrupted[n] + 1) % 256
+                            corrupted = binascii.hexlify(corrupted)
+
+                            # Save the checksum to a file
+                            with tempfile.NamedTemporaryFile() as tmp_checksum:
+                                tmp_checksum.write(corrupted + (' ' + m.group(2)).encode('LATIN-1'))
+                                tmp_checksum.flush()
+
+                                # Verify the checksum
+                                p = subprocess.run(
+                                    args = ["../bin/ksum", algo, "-c", tmp_checksum.name],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE
+                                )
+                                self.assertNotEqual(p.returncode, 0)
+                                self.assertEqual(p.stdout, b'') # Should print to stderr
+
+                                # Expect the first line of the stderr output to contain the failed file name
+                                # E.g. filename: FAILED
+                                lines = p.stderr.decode('LATIN-1').split('\n')
+                                self.assertEqual(len(lines), 3)
+                                self.assertEqual(lines[0], tmp.name + ": FAILED")
+                                self.assertEqual(lines[-1], '')
+
+    def test_multiple_files(self):
+        """
+        Test that ksum can correctly generate and verify checksums of multiple files.
+        """
+        for algo in algorithms:
+            with self.subTest(algorithm=algo):
+                with tempfile.NamedTemporaryFile() as tmp1:
+                    with tempfile.NamedTemporaryFile() as tmp2:
+                        with tempfile.NamedTemporaryFile() as tmp3:
+                            # Write some temporary data
+                            tmp1.write("The quick brown fox jumps over the lazy dog.".encode('LATIN-1'))
+                            tmp1.flush()
+                            tmp2.write("Lorem ipsum dolor sit amet".encode('LATIN-1'))
+                            tmp2.flush()
+                            tmp3.write("abcdefghijklmnopqrstuvwxyz".encode('LATIN-1'))
+                            tmp3.flush()
+
+                            # Generate a checksum
+                            p = subprocess.run(
+                                args = ["../bin/ksum", algo, tmp1.name, tmp2.name, tmp3.name],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE
+                            )
+                            self.assertEqual(p.returncode, 0)
+                            self.assertEqual(p.stderr, b'')
+
+                            # Check stdout format
+                            stdout_lines = p.stdout.decode('LATIN-1').split('\n')
+                            self.assertEqual(len(stdout_lines), 4)
+                            self.assertTrue(stdout_lines[0].endswith(tmp1.name))
+                            self.assertTrue(stdout_lines[1].endswith(tmp2.name))
+                            self.assertTrue(stdout_lines[2].endswith(tmp3.name))
+                            self.assertEqual(stdout_lines[3], '')
+
+                            # Save the checksums to a file
+                            with tempfile.NamedTemporaryFile() as tmp_checksum:
+                                tmp_checksum.write(p.stdout)
+                                tmp_checksum.flush()
+
+                                # Verify the checksum
+                                p = subprocess.run(
+                                    args = ["../bin/ksum", algo, "-c", tmp_checksum.name],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE
+                                )
+                                self.assertEqual(p.returncode, 0)
+                                self.assertEqual(p.stderr, b'')
+
+                                stdout_lines = p.stdout.decode('LATIN-1').split('\n')
+                                self.assertEqual(len(stdout_lines), 4)
+                                self.assertEqual(stdout_lines[0], tmp1.name + ': OK')
+                                self.assertEqual(stdout_lines[1], tmp2.name + ': OK')
+                                self.assertEqual(stdout_lines[2], tmp3.name + ': OK')
+                                self.assertEqual(stdout_lines[3], '')
 
 if __name__ == '__main__':
     unittest.main()
