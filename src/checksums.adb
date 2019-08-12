@@ -309,58 +309,51 @@ is
          end if;
 
          if Format_Errors > 0 then
-            Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, "ksum: WARNING: ");
-            Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, To_String (File_Name));
-            Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, ":");
-            Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, Integer'Image (Format_Errors));
+            Ada.Text_IO.Put ("ksum: WARNING: ");
+            Ada.Text_IO.Put (To_String (File_Name));
+            Ada.Text_IO.Put (":");
+            Ada.Text_IO.Put (Integer'Image (Format_Errors));
             if Format_Errors > 1 then
-               Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error,
-                                     " lines are improperly formatted");
+               Ada.Text_IO.Put_Line (" lines are improperly formatted");
             else
-               Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error,
-                                     " line is improperly formatted");
+               Ada.Text_IO.Put_Line (" line is improperly formatted");
             end if;
          end if;
 
          if Failed_Files > 0 then
             Ada.Command_Line.Set_Exit_Status (1);
 
-            Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, "ksum: WARNING: ");
-            Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, To_String (File_Name));
-            Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, ":");
-            Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, Integer'Image (Failed_Files));
+            Ada.Text_IO.Put ("ksum: WARNING: ");
+            Ada.Text_IO.Put (To_String (File_Name));
+            Ada.Text_IO.Put (":");
+            Ada.Text_IO.Put (Integer'Image (Failed_Files));
             if Failed_Files > 1 then
-               Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error,
-                                     " computed checksums did NOT match");
+               Ada.Text_IO.Put_Line (" computed checksums did NOT match");
             else
-               Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error,
-                                     " computed checksum did NOT match");
+               Ada.Text_IO.Put_Line (" computed checksum did NOT match");
             end if;
          end if;
 
          if IO_Errors > 0 then
             Ada.Command_Line.Set_Exit_Status (1);
 
-            Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, "ksum: WARNING: ");
-            Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, To_String (File_Name));
-            Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, ":");
-            Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, Integer'Image (IO_Errors));
+            Ada.Text_IO.Put ("ksum: WARNING: ");
+            Ada.Text_IO.Put (To_String (File_Name));
+            Ada.Text_IO.Put (":");
+            Ada.Text_IO.Put (Integer'Image (IO_Errors));
             if IO_Errors > 1 then
-               Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error,
-                                     " files could not be opened or read");
+               Ada.Text_IO.Put_Line (" files could not be opened or read");
             else
-               Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error,
-                                     " file could not be opened or read");
+               Ada.Text_IO.Put_Line (" file could not be opened or read");
             end if;
          end if;
 
          if Checked_Files = 0 then
-            Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, "ksum: ");
-            Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, To_String (File_Name));
-            Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, ": no properly formatted ");
-            Ada.Text_IO.Put (Ada.Text_IO.Standard_Error,
-                             To_String (Algorithm_Strings (Configurations.Algorithm)));
-            Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, " checksum lines found");
+            Ada.Text_IO.Put ("ksum: ");
+            Ada.Text_IO.Put (To_String (File_Name));
+            Ada.Text_IO.Put (": no properly formatted ");
+            Ada.Text_IO.Put (To_String (Algorithm_Strings (Configurations.Algorithm)));
+            Ada.Text_IO.Put_Line (" checksum lines found");
          end if;
       end loop;
 
@@ -453,6 +446,12 @@ is
                   --  Check the file
                   if Result /= No_Error then
                      null;
+
+                  elsif File_Name = "-" then
+                     Check_File (File          => Ada.Text_IO.Standard_Input,
+                                 Buffer        => Buffer,
+                                 Expected_Hash => Expected_Hash,
+                                 Result        => Result);
 
                   elsif Kind (To_String (File_Name)) = Directory then
                      raise Ada.IO_Exceptions.Name_Error
