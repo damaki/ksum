@@ -49,7 +49,7 @@ exception
    when Error : others =>
       Put (Standard_Error, "ksum: unhandled exception: ");
       Put (Standard_Error, Exception_Name (Error));
-      New_Line;
+      New_Line (Standard_Error);
       Put_Line (Standard_Error, Exception_Message (Error));
       Set_Exit_Status (Failure);
 end Ksum;
