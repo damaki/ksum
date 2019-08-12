@@ -309,6 +309,10 @@ is
          end if;
 
          if Format_Errors > 0 then
+            if Configurations.Strict then
+               Ada.Command_Line.Set_Exit_Status (1);
+            end if;
+
             Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, "ksum: WARNING: ");
             Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, To_String (File_Name));
             Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, ":");

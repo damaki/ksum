@@ -29,6 +29,7 @@ is
    procedure Set_Buffer_Size   (Short_Name, Long_Name, Arg : in String);
    procedure Set_Output_Size   (Short_Name, Long_Name, Arg : in String);
    procedure Set_Check_Mode    (Short_Name, Long_Name, Arg : in String);
+   procedure Set_Strict        (Short_Name, Long_Name, Arg : in String);
    procedure Set_Read_Mode     (Short_Name, Long_Name, Arg : in String);
    procedure Set_XOF_Mode      (Short_Name, Long_Name, Arg : in String);
    procedure Set_Function      (Short_Name, Long_Name, Arg : in String);
@@ -131,6 +132,19 @@ is
    begin
       Check_Mode := True;
    end Set_Check_Mode;
+
+   ----------------------
+   --  Set_Strict  --
+   ----------------------
+
+   procedure Set_Strict (Short_Name, Long_Name, Arg : in String)
+   is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+      pragma Unreferenced (Arg);
+   begin
+      Strict := True;
+   end Set_Strict;
 
    ---------------------
    --  Set_Read_Mode  --
@@ -278,6 +292,13 @@ is
        Description  => To_Unbounded_String ("Read checksums from the FILEs and check them"),
        Has_Argument => False,
        Handler      => Set_Check_Mode'Access),
+
+      (Short_Name   => Null_Unbounded_String,
+       Long_Name    => To_Unbounded_String ("--strict"),
+       Description  => To_Unbounded_String
+         ("exit non-zero for improperly formatted checksum lines"),
+       Has_Argument => False,
+       Handler      => Set_Strict'Access),
 
       (Short_Name   => To_Unbounded_String ("-t"),
        Long_Name    => To_Unbounded_String ("--text"),
