@@ -30,6 +30,7 @@ is
    procedure Set_Output_Size   (Short_Name, Long_Name, Arg : in String);
    procedure Set_Check_Mode    (Short_Name, Long_Name, Arg : in String);
    procedure Set_Strict        (Short_Name, Long_Name, Arg : in String);
+   procedure Set_Quiet         (Short_Name, Long_Name, Arg : in String);
    procedure Set_Warn          (Short_Name, Long_Name, Arg : in String);
    procedure Set_Read_Mode     (Short_Name, Long_Name, Arg : in String);
    procedure Set_XOF_Mode      (Short_Name, Long_Name, Arg : in String);
@@ -146,6 +147,19 @@ is
    begin
       Strict := True;
    end Set_Strict;
+
+   -----------------
+   --  Set_Quiet  --
+   -----------------
+
+   procedure Set_Quiet (Short_Name, Long_Name, Arg : in String)
+   is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+      pragma Unreferenced (Arg);
+   begin
+      Quiet := True;
+   end Set_Quiet;
 
    ----------------
    --  Set_Warn  --
@@ -335,6 +349,13 @@ is
        Group        => Argument_Parser.Main_Switches,
        Has_Argument => False,
        Handler      => Set_Read_Mode'Access),
+
+      (Short_Name   => Null_Unbounded_String,
+       Long_Name    => To_Unbounded_String ("--quiet"),
+       Description  => To_Unbounded_String ("don't print OK for each successfully verified file"),
+       Group        => Argument_Parser.Check_Switches,
+       Has_Argument => False,
+       Handler      => Set_Quiet'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--strict"),
