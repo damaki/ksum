@@ -167,19 +167,21 @@ Building `ksum` requires an Ada 2012 compatible compiler which also understands
 SPARK 2014. One such compiler is
 [GNAT GPL 2017 from AdaCore](https://libre.adacore.com/download).
 
-`ksum` is built using `gprbuild`, which is included in GNAT GPL 2017 or can be
+`ksum` is built using `gprbuild`, which is included in GNAT GPL 2019 or can be
 downloaded separately at the above AdaCore link.
 
-You will also need to build and install [`libkeccak`](https://github.com/damaki/libkeccak):
-  1. `git clone git@github.com:damaki/libkeccak.git`
-  2. `cd libkeccak`
-  3. `make build`
-  4. `make install`
+`ksum` is depends on [`libkeccak`](https://github.com/damaki/libkeccak) to
+implement the various algorithms that `ksum` supports (e.g. SHA-3).
 
-To build `ksum`:
-  1. `git clone git@github.com:damaki/ksum.git`
+To build `libkeccak` and `ksum`:
+  1. `git clone --recursive git@github.com:damaki/ksum.git`
   2. `cd ksum`
-  3. `gprbuild -p -P ksum.gpr -XLIBKECCAK_BUILD=default`
+  3. `cd libkeccak`
+  4. `make install`
+  5. `cd ..`
+  6. `gprbuild -p -P ksum.gpr -j0 -XLIBKECCAK_BUILD=default`
+
+If you have already built & installed `libkeccak` then you can skip steps 3, 4, and 5.
 
 The `ksum` executable will be placed in the `bin` directory.
 
