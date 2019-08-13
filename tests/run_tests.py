@@ -461,5 +461,85 @@ class TestCheckMode(unittest.TestCase):
                                 self.assertEqual(stdout_lines[2], tmp3.name + ': OK')
                                 self.assertEqual(stdout_lines[3], '')
 
+    def test_quiet(self):
+        """
+        Test that ksum writes nothing to stdout when --quiet is used.
+        """
+        for algo in algorithms:
+            with self.subTest(algorithm=algo):
+                with tempfile.NamedTemporaryFile() as tmp:
+                    # Write some temporary data
+                    tmp.write("The quick brown fox jumps over the lazy dog.".encode('LATIN-1'))
+                    tmp.flush()
+
+                    # Generate a checksum
+                    p = subprocess.run(
+                        args = ["../bin/ksum", algo, tmp.name],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE
+                    )
+                    self.assertEqual(p.returncode, 0)
+                    self.assertEqual(p.stderr, b'')
+
+                    # Save the checksum to a file
+                    with tempfile.NamedTemporaryFile() as tmp_checksum:
+                        tmp_checksum.write(p.stdout)
+                        tmp_checksum.flush()
+
+                        # Verify the checksum
+                        p = subprocess.run(
+                            args = ["../bin/ksum", algo, "-c", "--quiet", tmp_checksum.name],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE
+                        )
+                        self.assertEqual(p.returncode, 0)
+                        self.assertEqual(p.stdout, b'')
+                        self.assertEqual(p.stderr, b'')
+
+
+    def test_strict(self):
+        """
+        Test that ksum returns non-zero exit code for improperly formatted lines
+        when --strict is used
+        """
+        for algo in algorithms:
+            with self.subTest(algorithm=algo):
+                with tempfile.NamedTemporaryFile() as tmp:
+                    # Write some temporary data
+                    tmp.write("The quick brown fox jumps over the lazy dog.".encode('LATIN-1'))
+                    tmp.flush()
+
+                    # Generate a checksum
+                    p = subprocess.run(
+                        args = ["../bin/ksum", algo, tmp.name],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE
+                    )
+                    self.assertEqual(p.returncode, 0)
+                    self.assertEqual(p.stderr, b'')
+
+                    # Save a bad checksum to a file
+                    with tempfile.NamedTemporaryFile() as tmp_checksum:
+                        tmp_checksum.write(("0123456789abcdef0123456789abcdefgh  " + tmp.name).encode())
+                        tmp_checksum.flush()
+
+                        # Verify the (bad) checksum in --strict mode
+                        p = subprocess.run(
+                            args = ["../bin/ksum", algo, "-c", "--strict", tmp_checksum.name],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE
+                        )
+                        self.assertNotEqual(p.returncode, 0)
+                        self.assertEqual(p.stdout, b'')
+
+                        # Verify the (bad) checksum in non-strict mode
+                        p = subprocess.run(
+                            args = ["../bin/ksum", algo, "-c", tmp_checksum.name],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE
+                        )
+                        self.assertEqual(p.returncode, 0)
+                        self.assertEqual(p.stdout, b'')
+
 if __name__ == '__main__':
     unittest.main()
