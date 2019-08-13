@@ -125,6 +125,12 @@ is
    --  Computes the checksum over the contents of the specified file, and
    --  compares it against the specified expected hash.
 
+   procedure Format_Warning (File_Name   : in String;
+                             Line_Number : in Positive);
+   --  Prints a warning for an improperly formatted checksum line.
+   --
+   --  This subprogram has no effect if Warn mode is disabled.
+
    function Is_Hexadecimal_Character (C : in Character) return Boolean
    is (C in '0' .. '9' | 'a' .. 'f' | 'A' .. 'F')
      with Inline;
@@ -387,6 +393,8 @@ is
                                    Failed_Files  : in out Natural;
                                    IO_Errors     : in out Natural)
    is
+      Line_Number : Positive := 1;
+
    begin
       File_Loop :
       while not Ada.Text_IO.End_Of_File (File) loop
@@ -426,6 +434,8 @@ is
 
                if Hash_Last < 1 or Length (Line) <= Hash_Last + 1 then
                   Format_Errors := Format_Errors + 1;
+                  Format_Warning (Ada.Text_IO.Name (File), Line_Number);
+
                else
                   --  Determine read mode
                   Read_Mode_Pos := Hash_Last + 2;
@@ -495,18 +505,20 @@ is
                      when Format_Error =>
                         Format_Errors := Format_Errors + 1;
 
+                        Format_Warning (Ada.Text_IO.Name (File), Line_Number);
+
                      when Checksum_Error =>
                         Checked_Files := Checked_Files + 1;
-                        Failed_Files := Failed_Files + 1;
+                        Failed_Files  := Failed_Files  + 1;
 
-                        Ada.Text_IO.Put (File => Ada.Text_IO.Standard_Error,
-                                         Item => To_String (File_Name));
-
-                        Ada.Text_IO.Put_Line (File => Ada.Text_IO.Standard_Error,
-                                              Item => ": FAILED");
+                        Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, To_String (File_Name));
+                        Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, ": FAILED");
+                        Ada.Text_IO.New_Line (Ada.Text_IO.Standard_Error);
                   end case;
                end if;
             end if;
+
+            Line_Number := Line_Number + 1;
 
          exception
             when Error : Ada.IO_Exceptions.Name_Error |
@@ -567,5 +579,24 @@ is
          Deallocate_Byte_Array (Expected_Hash_Byte_Array);
          raise;
    end Check_File;
+
+   ----------------------
+   --  Format_Warning  --
+   ----------------------
+
+   procedure Format_Warning (File_Name   : in String;
+                             Line_Number : in Positive)
+   is
+   begin
+      if Configurations.Warn then
+         Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, "ksum: ");
+         Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, File_Name);
+         Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, ':');
+         Ada.Text_IO.Put (Ada.Text_IO.Standard_Error, Integer'Image (Line_Number));
+         Ada.Text_IO.Put (Ada.Text_IO.Standard_Error,
+                          ": improperly formatted checksum line");
+         Ada.Text_IO.New_Line (Ada.Text_IO.Standard_Error);
+      end if;
+   end Format_Warning;
 
 end Checksums;
