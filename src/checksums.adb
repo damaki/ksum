@@ -131,6 +131,11 @@ is
    --
    --  This subprogram has no effect if Warn mode is disabled.
 
+   procedure Check_Success (File_Name : in Unbounded_String);
+   --  Print an "OK" message for the specified file.
+   --
+   --  This subprogram has no effect if quiet mode is enabled.
+
    function Is_Hexadecimal_Character (C : in Character) return Boolean
    is (C in '0' .. '9' | 'a' .. 'f' | 'A' .. 'F')
      with Inline;
@@ -499,8 +504,7 @@ is
                   case Result is
                      when No_Error =>
                         Checked_Files := Checked_Files + 1;
-                        Ada.Text_IO.Put (To_String (File_Name));
-                        Ada.Text_IO.Put_Line (": OK");
+                        Check_Success (File_Name);
 
                      when Format_Error =>
                         Format_Errors := Format_Errors + 1;
@@ -598,5 +602,18 @@ is
          Ada.Text_IO.New_Line (Ada.Text_IO.Standard_Error);
       end if;
    end Format_Warning;
+
+   ---------------------
+   --  Check_Success  --
+   ---------------------
+
+   procedure Check_Success (File_Name : in Unbounded_String)
+   is
+   begin
+      if not Configurations.Quiet then
+         Ada.Text_IO.Put (To_String (File_Name));
+         Ada.Text_IO.Put_Line (": OK");
+      end if;
+   end Check_Success;
 
 end Checksums;
