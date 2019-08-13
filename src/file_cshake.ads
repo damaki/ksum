@@ -21,6 +21,7 @@ with Ada.Text_IO;
 with File_XOF;
 with Keccak.Generic_CSHAKE;
 with Keccak.Types;
+with Diagnostics;           use Diagnostics;
 
 generic
    with package CSHAKE is new Keccak.Generic_CSHAKE (<>);
@@ -31,6 +32,11 @@ is
    procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
                         Buffer : in out Keccak.Types.Byte_Array);
 
+   procedure Check_File (File          : in     Ada.Text_IO.File_Type;
+                         Buffer        : in out Keccak.Types.Byte_Array;
+                         Expected_Hash : in     Keccak.Types.Byte_Array;
+                         Result        :    out Diagnostic);
+
 private
 
    procedure Print_Output (Ctx    : in out CSHAKE.Context;
@@ -40,5 +46,10 @@ private
    procedure Hash_File_CSHAKE (File   : in     Ada.Text_IO.File_Type;
                                Buffer : in out Keccak.Types.Byte_Array);
    --  Hash the specified file and print the output
+
+   procedure Check_File_CSHAKE (File          : in     Ada.Text_IO.File_Type;
+                                Buffer        : in out Keccak.Types.Byte_Array;
+                                Expected_Hash : in     Keccak.Types.Byte_Array;
+                                Result        :    out Diagnostic);
 
 end File_CSHAKE;

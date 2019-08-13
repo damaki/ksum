@@ -80,6 +80,69 @@ is
       Print_Output (Ctx, Buffer);
    end Hash_File_CSHAKE;
 
+   -------------------------
+   --  Check_File_CSHAKE  --
+   -------------------------
+
+   procedure Check_File_CSHAKE (File          : in     Ada.Text_IO.File_Type;
+                                Buffer        : in out Keccak.Types.Byte_Array;
+                                Expected_Hash : in     Keccak.Types.Byte_Array;
+                                Result        :    out Diagnostic)
+   is
+      use type Keccak.Types.Byte_Array;
+
+      Ctx    : CSHAKE.Context;
+      Length : Natural;
+
+      Offset    : Natural := 0;
+      Remaining : Natural := Expected_Hash'Length;
+
+      I : Keccak.Types.Index_Number;
+      J : Keccak.Types.Index_Number;
+
+   begin
+      CSHAKE.Init (Ctx           => Ctx,
+                   Function_Name => To_String (Configurations.Function_Name),
+                   Customization => To_String (Configurations.Customization));
+
+      while not End_Of_File (File) loop
+         Read_Byte_Array (Stream (File), Buffer, Length);
+
+         if Length = 0 then
+            raise Program_Error with "Could not read from stream";
+         end if;
+
+         CSHAKE.Update (Ctx, Buffer (Buffer'First .. Buffer'First + (Length - 1)));
+      end loop;
+
+      Result := No_Error; --  Unless proven otherwise.
+
+      --  Verify the output in chunks of size: Buffer'Length
+      while Remaining >= Buffer'Length loop
+
+         CSHAKE.Extract (Ctx, Buffer);
+
+         I := Expected_Hash'First + Offset;
+         if Buffer /= Expected_Hash (I .. I + Buffer'Length - 1) then
+            Result := Checksum_Error;
+         end if;
+
+         Offset    := Offset    + Buffer'Length;
+         Remaining := Remaining - Buffer'Length;
+      end loop;
+
+      --  Verify last chunk
+      if Remaining > 0 then
+         CSHAKE.Extract (Ctx, Buffer (Buffer'First .. Buffer'First + Remaining - 1));
+
+         I := Buffer'First;
+         J := Expected_Hash'First + Offset;
+         if Buffer (I .. I + Remaining - 1) /= Expected_Hash (J .. J + Remaining - 1) then
+            Result := Checksum_Error;
+         end if;
+      end if;
+   end Check_File_CSHAKE;
+
    -----------------
    --  Hash_File  --
    -----------------
@@ -100,5 +163,28 @@ is
          Hash_File_CSHAKE (File, Buffer);
       end if;
    end Hash_File;
+
+   ------------------
+   --  Check_File  --
+   ------------------
+
+   procedure Check_File (File          : in     Ada.Text_IO.File_Type;
+                         Buffer        : in out Keccak.Types.Byte_Array;
+                         Expected_Hash : in     Keccak.Types.Byte_Array;
+                         Result        :    out Diagnostic)
+   is
+   begin
+      if (Configurations.Customization = Null_Unbounded_String
+          and Configurations.Function_Name = Null_Unbounded_String)
+      then
+         --  In the case where both the customization and function name strings
+         --  are the empty strings, cSHAKE is equivalent to SHAKE.
+         --  See Section 3.3 of NIST SP 800-185 for details.
+         SHAKE_File_Hashing.Check_File (File, Buffer, Expected_Hash, Result);
+
+      else
+         Check_File_CSHAKE (File, Buffer, Expected_Hash, Result);
+      end if;
+   end Check_File;
 
 end File_CSHAKE;

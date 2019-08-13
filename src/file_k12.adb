@@ -83,4 +83,68 @@ is
       pragma Unreferenced (Ctx);
    end Hash_File;
 
+   ------------------
+   --  Check_File  --
+   ------------------
+
+   procedure Check_File (File          : in     Ada.Text_IO.File_Type;
+                         Buffer        : in out Keccak.Types.Byte_Array;
+                         Expected_Hash : in     Keccak.Types.Byte_Array;
+                         Result        :    out Diagnostic)
+   is
+      use type Keccak.Types.Byte_Array;
+
+      Ctx    : K12.Context;
+      Length : Natural;
+
+      Offset    : Natural := 0;
+      Remaining : Natural := Expected_Hash'Length;
+
+      I : Keccak.Types.Index_Number;
+      J : Keccak.Types.Index_Number;
+
+   begin
+      K12.Init (Ctx);
+
+      while not End_Of_File (File) loop
+         Read_Byte_Array (Stream (File), Buffer, Length);
+
+         if Length = 0 then
+            raise Program_Error with "Could not read from stream";
+         end if;
+
+         K12.Update (Ctx, Buffer (Buffer'First .. Buffer'First + (Length - 1)));
+      end loop;
+
+      K12.Finish (Ctx           => Ctx,
+                  Customization => To_String (Configurations.Customization));
+
+      Result := No_Error; --  Unless proven otherwise.
+
+      --  Verify the output in chunks of size: Buffer'Length
+      while Remaining >= Buffer'Length loop
+
+         K12.Extract (Ctx, Buffer);
+
+         I := Expected_Hash'First + Offset;
+         if Buffer /= Expected_Hash (I .. I + Buffer'Length - 1) then
+            Result := Checksum_Error;
+         end if;
+
+         Offset    := Offset    + Buffer'Length;
+         Remaining := Remaining - Buffer'Length;
+      end loop;
+
+      --  Verify last chunk
+      if Remaining > 0 then
+         K12.Extract (Ctx, Buffer (Buffer'First .. Buffer'First + Remaining - 1));
+
+         I := Buffer'First;
+         J := Expected_Hash'First + Offset;
+         if Buffer (I .. I + Remaining - 1) /= Expected_Hash (J .. J + Remaining - 1) then
+            Result := Checksum_Error;
+         end if;
+      end if;
+   end Check_File;
+
 end File_K12;

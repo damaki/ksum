@@ -17,7 +17,8 @@
 --  You should have received a copy of the GNU General Public License
 --  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
-with Keccak.Types; use Keccak.Types;
+with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+with Keccak.Types;          use Keccak.Types;
 
 package Hex_Strings
 is
@@ -33,5 +34,10 @@ is
    --
    --  The input string can contain both upper-case and lower-case hexadecimal
    --  digits.
+
+   procedure Parse_Hex_String (Str  : in     Unbounded_String;
+                               Data :    out Byte_Array)
+     with Pre => (Length (Str) mod 2 = 0
+                  and Data'Length = Length (Str) / 2);
 
 end Hex_Strings;

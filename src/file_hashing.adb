@@ -25,6 +25,10 @@ with Stream_Byte_Arrays;       use Stream_Byte_Arrays;
 package body File_Hashing
 is
 
+   -----------------
+   --  Hash_File  --
+   -----------------
+
    procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
                         Buffer : in out Keccak.Types.Byte_Array)
    is
@@ -50,5 +54,48 @@ is
 
       Print_Hex_String (Digest);
    end Hash_File;
+
+   ------------------
+   --  Check_File  --
+   ------------------
+
+   procedure Check_File (File          : in     Ada.Text_IO.File_Type;
+                         Buffer        : in out Keccak.Types.Byte_Array;
+                         Expected_Hash : in     Keccak.Types.Byte_Array;
+                         Result        :    out Diagnostic)
+   is
+      use type Keccak.Types.Byte_Array;
+
+      Ctx    : Hash.Context;
+      Length : Natural;
+
+      Digest : Hash.Digest_Type;
+
+   begin
+      if Expected_Hash'Length /= Hash.Digest_Type'Length then
+         Result := Format_Error;
+
+      else
+         Hash. Init (Ctx);
+
+         while not End_Of_File (File) loop
+            Read_Byte_Array (Stream (File), Buffer, Length);
+
+            if Length = 0 then
+               raise Program_Error with "Could not read from stream";
+            end if;
+
+            Hash.Update (Ctx, Buffer (Buffer'First .. Buffer'First + (Length - 1)));
+         end loop;
+
+         Hash.Final (Ctx, Digest);
+
+         if Digest /= Expected_Hash then
+            Result := Checksum_Error;
+         else
+            Result := No_Error;
+         end if;
+      end if;
+   end Check_File;
 
 end File_Hashing;
