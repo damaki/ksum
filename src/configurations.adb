@@ -30,6 +30,7 @@ is
    procedure Set_Output_Size   (Short_Name, Long_Name, Arg : in String);
    procedure Set_Check_Mode    (Short_Name, Long_Name, Arg : in String);
    procedure Set_Strict        (Short_Name, Long_Name, Arg : in String);
+   procedure Set_Warn          (Short_Name, Long_Name, Arg : in String);
    procedure Set_Read_Mode     (Short_Name, Long_Name, Arg : in String);
    procedure Set_XOF_Mode      (Short_Name, Long_Name, Arg : in String);
    procedure Set_Function      (Short_Name, Long_Name, Arg : in String);
@@ -133,9 +134,9 @@ is
       Check_Mode := True;
    end Set_Check_Mode;
 
-   ----------------------
+   ------------------
    --  Set_Strict  --
-   ----------------------
+   ------------------
 
    procedure Set_Strict (Short_Name, Long_Name, Arg : in String)
    is
@@ -145,6 +146,19 @@ is
    begin
       Strict := True;
    end Set_Strict;
+
+   ----------------
+   --  Set_Warn  --
+   ----------------
+
+   procedure Set_Warn (Short_Name, Long_Name, Arg : in String)
+   is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+      pragma Unreferenced (Arg);
+   begin
+      Warn := True;
+   end Set_Warn;
 
    ---------------------
    --  Set_Read_Mode  --
@@ -329,6 +343,13 @@ is
        Group        => Argument_Parser.Check_Switches,
        Has_Argument => False,
        Handler      => Set_Strict'Access),
+
+      (Short_Name   => To_Unbounded_String ("-w"),
+       Long_Name    => To_Unbounded_String ("--warn"),
+       Description  => To_Unbounded_String ("warn about improperly formatted checksum lines"),
+       Group        => Argument_Parser.Check_Switches,
+       Has_Argument => False,
+       Handler      => Set_Warn'Access),
 
       (Short_Name   => To_Unbounded_String ("-k"),
        Long_Name    => To_Unbounded_String ("--key"),
