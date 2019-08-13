@@ -30,10 +30,17 @@ is
    type Argument_Handler is
      access not null procedure (Short_Name, Long_Name, Arg : in String);
 
+   type Group_Type is
+     (Main_Switches,
+      Check_Switches,
+      Customization,
+      Algorithms);
+
    type Switch_Descriptor is record
       Short_Name   : Unbounded_String;
       Long_Name    : Unbounded_String;
       Description  : Unbounded_String;
+      Group        : Group_Type;
       Has_Argument : Boolean;
       Handler      : Argument_Handler;
    end record;

@@ -38,7 +38,7 @@ is
    procedure Add_Stdin         (Short_Name, Long_Name, Arg : in String);
    procedure Print_Help        (Short_Name, Long_Name, Arg : in String);
 
-   procedure Print_Switches;
+   procedure Print_Switches (Group : in Argument_Parser.Group_Type);
 
    ---------------
    --  Set_Ket  --
@@ -264,9 +264,21 @@ is
       New_Line;
       Put_Line ("With no FILE, or when FILE is -, read standard input");
       New_Line;
-      Put_Line ("ksum switches:");
 
-      Print_Switches;
+      Put_Line ("ksum switches:");
+      Print_Switches (Argument_Parser.Main_Switches);
+      New_Line;
+
+      Put_Line ("The following options are used only when verifying checksums:");
+      Print_Switches (Argument_Parser.Check_Switches);
+      New_Line;
+
+      Put_Line ("The following options select the checksum algorithm:");
+      Print_Switches (Argument_Parser.Algorithms);
+      New_Line;
+
+      Put_Line ("The following options are used to customize the algorithm:");
+      Print_Switches (Argument_Parser.Customization);
 
    end Print_Help;
 
@@ -278,199 +290,232 @@ is
      ((Short_Name   => To_Unbounded_String ("-"),
        Long_Name    => Null_Unbounded_String,
        Description  => Null_Unbounded_String,
+       Group        => Argument_Parser.Main_Switches,
        Has_Argument => False,
        Handler      => Add_Stdin'Access),
 
       (Short_Name   => To_Unbounded_String ("-h"),
        Long_Name    => To_Unbounded_String ("--help"),
        Description  => To_Unbounded_String ("Print this message"),
+       Group        => Argument_Parser.Main_Switches,
        Has_Argument => False,
        Handler      => Print_Help'Access),
 
       (Short_Name   => To_Unbounded_String ("-c"),
        Long_Name    => To_Unbounded_String ("--check"),
        Description  => To_Unbounded_String ("Read checksums from the FILEs and check them"),
+       Group        => Argument_Parser.Main_Switches,
        Has_Argument => False,
        Handler      => Set_Check_Mode'Access),
-
-      (Short_Name   => Null_Unbounded_String,
-       Long_Name    => To_Unbounded_String ("--strict"),
-       Description  => To_Unbounded_String
-         ("exit non-zero for improperly formatted checksum lines"),
-       Has_Argument => False,
-       Handler      => Set_Strict'Access),
 
       (Short_Name   => To_Unbounded_String ("-t"),
        Long_Name    => To_Unbounded_String ("--text"),
        Description  => To_Unbounded_String ("read in text mode (default)"),
+       Group        => Argument_Parser.Main_Switches,
        Has_Argument => False,
        Handler      => Set_Read_Mode'Access),
 
       (Short_Name   => To_Unbounded_String ("-b"),
        Long_Name    => To_Unbounded_String ("--binary"),
        Description  => To_Unbounded_String ("read in binary mode"),
+       Group        => Argument_Parser.Main_Switches,
        Has_Argument => False,
        Handler      => Set_Read_Mode'Access),
+
+      (Short_Name   => Null_Unbounded_String,
+       Long_Name    => To_Unbounded_String ("--strict"),
+       Description  => To_Unbounded_String
+         ("exit non-zero for improperly formatted checksum lines"),
+       Group        => Argument_Parser.Check_Switches,
+       Has_Argument => False,
+       Handler      => Set_Strict'Access),
 
       (Short_Name   => To_Unbounded_String ("-k"),
        Long_Name    => To_Unbounded_String ("--key"),
        Description  => To_Unbounded_String ("Key used for KMAC as a hex string"),
+       Group        => Argument_Parser.Customization,
        Has_Argument => True,
        Handler      => Set_Key'Access),
 
       (Short_Name   => To_Unbounded_String ("-B"),
        Long_Name    => To_Unbounded_String ("--block-size"),
        Description  => To_Unbounded_String ("Set the block size (bytes) for ParallelHash"),
+       Group        => Argument_Parser.Customization,
        Has_Argument => True,
        Handler      => Set_Block_Size'Access),
 
       (Short_Name   => To_Unbounded_String ("-z"),
        Long_Name    => To_Unbounded_String ("--buffer-size"),
        Description  => To_Unbounded_String ("Set the buffer size used for reading file/stdin data"),
+       Group        => Argument_Parser.Customization,
        Has_Argument => True,
        Handler      => Set_Buffer_Size'Access),
 
       (Short_Name   => To_Unbounded_String ("-n"),
        Long_Name    => To_Unbounded_String ("--output-size"),
        Description  => To_Unbounded_String ("Number of bytes to output"),
+       Group        => Argument_Parser.Customization,
        Has_Argument => True,
        Handler      => Set_Output_Size'Access),
 
       (Short_Name   => To_Unbounded_String ("-x"),
        Long_Name    => To_Unbounded_String ("--xof"),
        Description  => To_Unbounded_String ("Use XOF mode for output"),
+       Group        => Argument_Parser.Customization,
        Has_Argument => False,
        Handler      => Set_XOF_Mode'Access),
 
       (Short_Name   => To_Unbounded_String ("-f"),
        Long_Name    => To_Unbounded_String ("--function"),
        Description  => To_Unbounded_String ("Set the function name for cSHAKE"),
+       Group        => Argument_Parser.Customization,
        Has_Argument => True,
        Handler      => Set_Function'Access),
 
       (Short_Name   => To_Unbounded_String ("-C"),
        Long_Name    => To_Unbounded_String ("--customization"),
        Description  => To_Unbounded_String ("Set the customization string"),
+       Group        => Argument_Parser.Customization,
        Has_Argument => True,
        Handler      => Set_Customization'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--cshake128"),
        Description  => To_Unbounded_String ("Use cSHAKE128"),
+       Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--cshake256"),
        Description  => To_Unbounded_String ("Use cSHAKE256"),
+       Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--kangarootwelve"),
        Description  => To_Unbounded_String ("Use KangarooTwelve"),
+       Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--marsupilamifourteen"),
        Description  => To_Unbounded_String ("Use MarsupilamiFourteen"),
+       Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--keccak-224"),
        Description  => To_Unbounded_String ("Use Keccak-224"),
+       Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--keccak-256"),
        Description  => To_Unbounded_String ("Use Keccak-256"),
+       Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--keccak-384"),
        Description  => To_Unbounded_String ("Use Keccak-384"),
+       Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--keccak-512"),
        Description  => To_Unbounded_String ("Use Keccak-512"),
+       Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--kmac128"),
        Description  => To_Unbounded_String ("Use KMAC128"),
+       Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--kmac256"),
        Description  => To_Unbounded_String ("Use KMAC256"),
+       Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--parallelhash128"),
        Description  => To_Unbounded_String ("Use ParallelHash128"),
+       Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--parallelhash256"),
        Description  => To_Unbounded_String ("Use ParallelHash256"),
+       Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--rawshake128"),
        Description  => To_Unbounded_String ("Use RawSHAKE128"),
+       Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--rawshake256"),
        Description  => To_Unbounded_String ("Use RawSHAKE256"),
+       Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--sha3-224"),
        Description  => To_Unbounded_String ("Use SHA3-224"),
+       Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--sha3-256"),
        Description  => To_Unbounded_String ("Use SHA3-256 (default)"),
+       Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--sha3-384"),
        Description  => To_Unbounded_String ("Use SHA3-384"),
+       Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--sha3-512"),
        Description  => To_Unbounded_String ("Use SHA3-512"),
+       Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--shake128"),
        Description  => To_Unbounded_String ("Use SHAKE128"),
+       Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--shake256"),
        Description  => To_Unbounded_String ("Use SHAKE256"),
+       Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access));
 
@@ -488,7 +533,7 @@ is
    --  Print_Switches  --
    ----------------------
 
-   procedure Print_Switches
+   procedure Print_Switches (Group : in Argument_Parser.Group_Type)
    is
       Max_Spaces : Natural := 1;
       --  Space after switch short name to the description.
@@ -503,7 +548,7 @@ is
 
          --  We implement the "-" for Standard_Input as a switch, but don't
          --  include it in the list of switches, as it's not really a switch.
-         if Switch_Table (I).Short_Name /= "-" then
+         if Switch_Table (I).Short_Name /= "-" and Switch_Table (I).Group = Group then
 
             if Switch_Table (I).Short_Name = Null_Unbounded_String then
                Put ("      ");
