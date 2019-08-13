@@ -165,9 +165,9 @@ The default block size for ParallelHash is 8192 bytes (8 kiB).
 
 Building `ksum` requires an Ada 2012 compatible compiler which also understands
 SPARK 2014. One such compiler is
-[GNAT GPL 2017 from AdaCore](https://libre.adacore.com/download).
+[GNAT Community 2019 from AdaCore](https://libre.adacore.com/download).
 
-`ksum` is built using `gprbuild`, which is included in GNAT GPL 2019 or can be
+`ksum` is built using `gprbuild`, which is included in GNAT Community 2019 or can be
 downloaded separately at the above AdaCore link.
 
 `ksum` is depends on [`libkeccak`](https://github.com/damaki/libkeccak) to
