@@ -174,12 +174,12 @@ downloaded separately at the above AdaCore link.
 implement the various algorithms that `ksum` supports (e.g. SHA-3).
 
 To build `libkeccak` and `ksum`:
-  1. `git clone --recursive git@github.com:damaki/ksum.git`
+  1. `git clone --recursive https://github.com/damaki/ksum.git`
   2. `cd ksum`
   3. `cd libkeccak`
   4. `make install`
   5. `cd ..`
-  6. `gprbuild -p -P ksum.gpr -j0 -XLIBKECCAK_BUILD=default`
+  6. `./build.sh`
 
 If you have already built & installed `libkeccak` then you can skip steps 3, 4, and 5.
 
@@ -216,12 +216,6 @@ The table also includes the output of other checksum programs for reference
 | **sha256sum bigfile**          | 0m8.276s  | 0m8.124s  | 0m0.148s |
 | **sha224sum bigfile**          | 0m8.296s  | 0m8.124s  | 0m0.168s |
 | ksum --sha3-512 bigfile        | 0m11.437s | 0m11.260s | 0m0.172s |
-
-## TODO
-
-Things not yet implemented:
-  * Testing against test vectors.
-    (although `libkeccak` itself is tested against test vectors)
 
 ## References
 
