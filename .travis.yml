@@ -10,7 +10,7 @@ branches:
     master
 
 git:
-  submodules: false
+  submodules: true
 
 script:
   - ./travis_build.sh

@@ -21,6 +21,8 @@ with Ada.Text_IO;       use Ada.Text_IO;
 with Argument_Parser;   use Argument_Parser;
 with Hex_Strings;       use Hex_Strings;
 
+with Version; --  Generated spec
+
 package body Configurations
 is
 
@@ -39,6 +41,7 @@ is
    procedure Set_Algorithm     (Short_Name, Long_Name, Arg : in String);
    procedure Add_Stdin         (Short_Name, Long_Name, Arg : in String);
    procedure Print_Help        (Short_Name, Long_Name, Arg : in String);
+   procedure Print_Version     (Short_Name, Long_Name, Arg : in String);
 
    procedure Print_Switches (Group : in Argument_Parser.Group_Type);
 
@@ -310,6 +313,23 @@ is
 
    end Print_Help;
 
+   procedure Print_Version (Short_Name, Long_Name, Arg : in String)
+   is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Long_Name);
+      pragma Unreferenced (Arg);
+   begin
+      Help_Displayed := True;
+
+      Put ("ksum ");
+      Put_Line (Version.Version_String);
+      Put_Line ("License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>");
+      Put_Line ("This is free software: you are free to change and redistribute it.");
+      Put_Line ("There is NO WARRANTY, to the extent permitted by law.");
+      New_Line;
+      Put_Line ("Written by Daniel King.");
+   end Print_Version;
+
    --------------------
    --  Switch Table  --
    --------------------
@@ -324,10 +344,17 @@ is
 
       (Short_Name   => To_Unbounded_String ("-h"),
        Long_Name    => To_Unbounded_String ("--help"),
-       Description  => To_Unbounded_String ("Print this message"),
+       Description  => To_Unbounded_String ("Print this message and exit"),
        Group        => Argument_Parser.Main_Switches,
        Has_Argument => False,
        Handler      => Print_Help'Access),
+
+      (Short_Name   => To_Unbounded_String ("-v"),
+       Long_Name    => To_Unbounded_String ("--version"),
+       Description  => To_Unbounded_String ("Print version information and exit"),
+       Group        => Argument_Parser.Main_Switches,
+       Has_Argument => False,
+       Handler      => Print_Version'Access),
 
       (Short_Name   => To_Unbounded_String ("-c"),
        Long_Name    => To_Unbounded_String ("--check"),

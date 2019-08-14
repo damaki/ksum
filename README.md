@@ -165,21 +165,23 @@ The default block size for ParallelHash is 8192 bytes (8 kiB).
 
 Building `ksum` requires an Ada 2012 compatible compiler which also understands
 SPARK 2014. One such compiler is
-[GNAT GPL 2017 from AdaCore](https://libre.adacore.com/download).
+[GNAT Community 2019 from AdaCore](https://libre.adacore.com/download).
 
-`ksum` is built using `gprbuild`, which is included in GNAT GPL 2017 or can be
+`ksum` is built using `gprbuild`, which is included in GNAT Community 2019 or can be
 downloaded separately at the above AdaCore link.
 
-You will also need to build and install [`libkeccak`](https://github.com/damaki/libkeccak):
-  1. `git clone git@github.com:damaki/libkeccak.git`
-  2. `cd libkeccak`
-  3. `make build`
-  4. `make install`
+`ksum` is depends on [`libkeccak`](https://github.com/damaki/libkeccak) to
+implement the various algorithms that `ksum` supports (e.g. SHA-3).
 
-To build `ksum`:
-  1. `git clone git@github.com:damaki/ksum.git`
+To build `libkeccak` and `ksum`:
+  1. `git clone --recursive https://github.com/damaki/ksum.git`
   2. `cd ksum`
-  3. `gprbuild -p -P ksum.gpr -XLIBKECCAK_BUILD=default`
+  3. `cd libkeccak`
+  4. `make install`
+  5. `cd ..`
+  6. `./build.sh`
+
+If you have already built & installed `libkeccak` then you can skip steps 3, 4, and 5.
 
 The `ksum` executable will be placed in the `bin` directory.
 
@@ -214,12 +216,6 @@ The table also includes the output of other checksum programs for reference
 | **sha256sum bigfile**          | 0m8.276s  | 0m8.124s  | 0m0.148s |
 | **sha224sum bigfile**          | 0m8.296s  | 0m8.124s  | 0m0.168s |
 | ksum --sha3-512 bigfile        | 0m11.437s | 0m11.260s | 0m0.172s |
-
-## TODO
-
-Things not yet implemented:
-  * Testing against test vectors.
-    (although `libkeccak` itself is tested against test vectors)
 
 ## References
 
