@@ -27,22 +27,23 @@ with Version; --  Generated spec
 package body Configurations
 is
 
-   procedure Set_Key           (Short_Name, Long_Name, Arg : in String);
-   procedure Set_Block_Size    (Short_Name, Long_Name, Arg : in String);
-   procedure Set_Buffer_Size   (Short_Name, Long_Name, Arg : in String);
-   procedure Set_Output_Size   (Short_Name, Long_Name, Arg : in String);
-   procedure Set_Check_Mode    (Short_Name, Long_Name, Arg : in String);
-   procedure Set_Strict        (Short_Name, Long_Name, Arg : in String);
-   procedure Set_Quiet         (Short_Name, Long_Name, Arg : in String);
-   procedure Set_Warn          (Short_Name, Long_Name, Arg : in String);
-   procedure Set_Read_Mode     (Short_Name, Long_Name, Arg : in String);
-   procedure Set_XOF_Mode      (Short_Name, Long_Name, Arg : in String);
-   procedure Set_Function      (Short_Name, Long_Name, Arg : in String);
-   procedure Set_Customization (Short_Name, Long_Name, Arg : in String);
-   procedure Set_Algorithm     (Short_Name, Long_Name, Arg : in String);
-   procedure Add_Stdin         (Short_Name, Long_Name, Arg : in String);
-   procedure Print_Help        (Short_Name, Long_Name, Arg : in String);
-   procedure Print_Version     (Short_Name, Long_Name, Arg : in String);
+   procedure Set_Key             (Short_Name, Long_Name, Arg : in String);
+   procedure Set_Block_Size      (Short_Name, Long_Name, Arg : in String);
+   procedure Set_Buffer_Size     (Short_Name, Long_Name, Arg : in String);
+   procedure Set_Output_Size     (Short_Name, Long_Name, Arg : in String);
+   procedure Set_Check_Mode      (Short_Name, Long_Name, Arg : in String);
+   procedure Set_Strict          (Short_Name, Long_Name, Arg : in String);
+   procedure Set_Quiet           (Short_Name, Long_Name, Arg : in String);
+   procedure Set_Warn            (Short_Name, Long_Name, Arg : in String);
+   procedure Set_Read_Mode       (Short_Name, Long_Name, Arg : in String);
+   procedure Set_XOF_Mode        (Short_Name, Long_Name, Arg : in String);
+   procedure Set_Function        (Short_Name, Long_Name, Arg : in String);
+   procedure Set_Customization   (Short_Name, Long_Name, Arg : in String);
+   procedure Set_Algorithm       (Short_Name, Long_Name, Arg : in String);
+   procedure Set_Algorithm_Alias (Short_Name, Long_Name, Arg : in String);
+   procedure Add_Stdin           (Short_Name, Long_Name, Arg : in String);
+   procedure Print_Help          (Short_Name, Long_Name, Arg : in String);
+   procedure Print_Version       (Short_Name, Long_Name, Arg : in String);
 
    procedure Print_Switches (Group : in Argument_Parser.Group_Type);
 
@@ -266,6 +267,24 @@ is
       end if;
    end Set_Algorithm;
 
+   ---------------------------
+   --  Set_Algorithm_Alias  --
+   ---------------------------
+
+   procedure Set_Algorithm_Alias (Short_Name, Long_Name, Arg : in String)
+   is
+      pragma Unreferenced (Short_Name);
+      pragma Unreferenced (Arg);
+   begin
+      if Long_Name = "--k12" then
+         Algorithm := KangarooTwelve;
+      elsif Long_Name = "--m14" then
+         Algorithm := MarsupilamiFourteen;
+      else
+         raise Program_Error with "Unknown alias: " & Long_Name;
+      end if;
+   end Set_Algorithm_Alias;
+
    -----------------
    --  Add_Stdin  --
    -----------------
@@ -473,11 +492,25 @@ is
        Handler      => Set_Algorithm'Access),
 
       (Short_Name   => Null_Unbounded_String,
+       Long_Name    => To_Unbounded_String ("--k12"),
+       Description  => To_Unbounded_String ("Alias for --kangarootwelve"),
+       Group        => Argument_Parser.Algorithms,
+       Has_Argument => False,
+       Handler      => Set_Algorithm_Alias'Access),
+
+      (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--marsupilamifourteen"),
        Description  => To_Unbounded_String ("Use MarsupilamiFourteen"),
        Group        => Argument_Parser.Algorithms,
        Has_Argument => False,
        Handler      => Set_Algorithm'Access),
+
+      (Short_Name   => Null_Unbounded_String,
+       Long_Name    => To_Unbounded_String ("--m14"),
+       Description  => To_Unbounded_String ("Alias for --marsupilamifourteen"),
+       Group        => Argument_Parser.Algorithms,
+       Has_Argument => False,
+       Handler      => Set_Algorithm_Alias'Access),
 
       (Short_Name   => Null_Unbounded_String,
        Long_Name    => To_Unbounded_String ("--keccak-224"),
