@@ -20,6 +20,7 @@
 with Ada.Text_IO;       use Ada.Text_IO;
 with Argument_Parser;   use Argument_Parser;
 with Hex_Strings;       use Hex_Strings;
+with Parallel_Hash;
 
 with Version; --  Generated spec
 
@@ -77,15 +78,17 @@ is
       pragma Unreferenced (Short_Name);
       pragma Unreferenced (Long_Name);
 
+      subtype Block_Size_Number is Parallel_Hash.ParallelHash128.Block_Size_Number;
+
    begin
-      Block_Size := Positive'Value (Arg);
+      Block_Size := Block_Size_Number'Value (Arg);
 
    exception
       when Constraint_Error =>
          raise Argument_Error with "block size must be a positive integer in the range "
-           & Positive'Image (Positive'First)
+           & Block_Size_Number'Image (Block_Size_Number'First)
            & " .."
-           & Positive'Image (Positive'Last);
+           & Block_Size_Number'Image (Block_Size_Number'Last);
    end Set_Block_Size;
 
    -----------------------
