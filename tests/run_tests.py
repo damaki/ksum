@@ -585,5 +585,86 @@ class TestCheckMode(unittest.TestCase):
                     finally:
                         os.unlink(tmp.name)
 
+    def test_line_endings(self):
+        """
+        Test that ksum can handle both \n and \r\n line ending styles.
+        """
+        with tempfile.NamedTemporaryFile(delete=False) as tmp1:
+            with tempfile.NamedTemporaryFile(delete=False) as tmp2:
+                with tempfile.NamedTemporaryFile(delete=False) as tmp3:
+                    try:
+                        # Write some temporary data
+                        tmp1.write("The quick brown fox jumps over the lazy dog.".encode('LATIN-1'))
+                        tmp1.close()
+                        tmp2.write("Lorem ipsum dolor sit amet".encode('LATIN-1'))
+                        tmp2.close()
+                        tmp3.write("abcdefghijklmnopqrstuvwxyz".encode('LATIN-1'))
+                        tmp3.close()
+
+                        # Generate a checksum
+                        p = subprocess.run(
+                            args = ["../bin/ksum", tmp1.name, tmp2.name, tmp3.name],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE
+                        )
+                        self.assertEqual(p.returncode, 0)
+                        self.assertEqual(p.stderr, b'')
+
+                        # Get the canonical output (line feed endings only)
+                        canonical = p.stdout.decode('LATIN-1').replace('\r','')
+
+                        # Try verifying a checksum file using \n line endings only
+                        with tempfile.NamedTemporaryFile(delete=False) as tmp_checksum:
+                            try:
+                                tmp_checksum.write(canonical.encode('LATIN-1'))
+                                tmp_checksum.close()
+
+                                # Verify the checksum (run in strict mode to disallow badly formatted lines)
+                                p = subprocess.run(
+                                    args = ["../bin/ksum", "--strict", "-c", tmp_checksum.name],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE
+                                )
+                                self.assertEqual(p.returncode, 0)
+                                self.assertEqual(p.stderr, b'')
+
+                                stdout_lines = p.stdout.decode('LATIN-1').replace('\r','').split('\n')
+                                self.assertEqual(len(stdout_lines), 4)
+                                self.assertEqual(stdout_lines[0], tmp1.name + ': OK')
+                                self.assertEqual(stdout_lines[1], tmp2.name + ': OK')
+                                self.assertEqual(stdout_lines[2], tmp3.name + ': OK')
+                                self.assertEqual(stdout_lines[3], '')
+                            finally:
+                                os.unlink(tmp_checksum.name)
+
+                        # Try verifying a checksum file using \r\n line endings
+                        with tempfile.NamedTemporaryFile(delete=False) as tmp_checksum:
+                            try:
+                                tmp_checksum.write(canonical.replace('\n', '\r\n').encode('LATIN-1'))
+                                tmp_checksum.close()
+
+                                # Verify the checksum (run in strict mode to disallow badly formatted lines)
+                                p = subprocess.run(
+                                    args = ["../bin/ksum", "--strict", "-c", tmp_checksum.name],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE
+                                )
+                                self.assertEqual(p.returncode, 0)
+                                self.assertEqual(p.stderr, b'')
+
+                                stdout_lines = p.stdout.decode('LATIN-1').replace('\r','').split('\n')
+                                self.assertEqual(len(stdout_lines), 4)
+                                self.assertEqual(stdout_lines[0], tmp1.name + ': OK')
+                                self.assertEqual(stdout_lines[1], tmp2.name + ': OK')
+                                self.assertEqual(stdout_lines[2], tmp3.name + ': OK')
+                                self.assertEqual(stdout_lines[3], '')
+                            finally:
+                                os.unlink(tmp_checksum.name)
+                    finally:
+                        os.unlink(tmp1.name)
+                        os.unlink(tmp2.name)
+                        os.unlink(tmp3.name)
+
+
 if __name__ == '__main__':
     unittest.main()
