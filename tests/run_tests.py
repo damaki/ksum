@@ -136,23 +136,26 @@ class TestVectors(unittest.TestCase):
             bit_len = int(v['Len'])
             if bit_len % 8 == 0:
                 with self.subTest(vector=v):
-                    with tempfile.NamedTemporaryFile() as tmp:
-                        # Write the Msg to the file
-                        msg = binascii.unhexlify(v['Msg'])
-                        tmp.write(msg[0:bit_len // 8])
-                        tmp.flush()
+                    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                        try:
+                            # Write the Msg to the file
+                            msg = binascii.unhexlify(v['Msg'])
+                            tmp.write(msg[0:bit_len // 8])
+                            tmp.close()
 
-                        # Generate the checksum
-                        p = subprocess.run(
-                            args = ["../bin/ksum", algorithm, "--binary", tmp.name],
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE
-                        )
-                        expected_stdout = v['MD'].lower() + ' *' + tmp.name + '\n'
+                            # Generate the checksum
+                            p = subprocess.run(
+                                args = ["../bin/ksum", algorithm, "--binary", tmp.name],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE
+                            )
+                            expected_stdout = v['MD'].lower() + ' *' + tmp.name + '\n'
 
-                        self.assertEqual(p.returncode, 0)
-                        self.assertEqual(p.stdout, expected_stdout.encode('LATIN-1'))
-                        self.assertEqual(p.stderr, b'')
+                            self.assertEqual(p.returncode, 0)
+                            self.assertEqual(p.stdout.decode('LATIN-1').replace('\r',''), expected_stdout)
+                            self.assertEqual(p.stderr, b'')
+                        finally:
+                            os.unlink(tmp.name)
 
     def run_kmac_vector(self, vectors, algorithm, xof=False):
         """
@@ -166,19 +169,124 @@ class TestVectors(unittest.TestCase):
             out_bit_len = int(v['OutLen'])
             if (in_bit_len % 8 == 0) and (key_bit_len % 8 == 0) and (out_bit_len % 8 == 0):
                 with self.subTest(vector=v):
-                    with tempfile.NamedTemporaryFile() as tmp:
+                    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                        try:
+                            # Write the Msg to the file
+                            msg = binascii.unhexlify(v['In'])
+                            tmp.write(msg[0:in_bit_len // 8])
+                            tmp.close()
+
+                            args = [
+                                "../bin/ksum",
+                                algorithm,
+                                "--key",
+                                v['Key'],
+                                "-n",
+                                str(out_bit_len // 8),
+                                "--binary"
+                            ]
+
+                            # Add customization string, if not empty
+                            custom = v['S'].replace('"', '')
+                            if custom != '':
+                                args.append("-C")
+                                args.append(custom)
+
+                            # Set XOF mode, if requested
+                            if xof:
+                                args.append("--xof")
+
+                            args.append(tmp.name)
+
+                            # Generate the checksum
+                            p = subprocess.run(
+                                args,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE
+                            )
+                            expected_stdout = v['Out'].lower() + ' *' + tmp.name + '\n'
+
+                            self.assertEqual(p.returncode, 0)
+                            self.assertEqual(p.stdout.decode('LATIN-1').replace('\r',''), expected_stdout)
+                            self.assertEqual(p.stderr, b'')
+                        finally:
+                            os.unlink(tmp.name)
+
+    def run_cshake_vector(self, vectors, algorithm):
+        """
+        Helper to invoke ksum on a KMAC test vectors file and check the output.
+        """
+        self.assertGreater(len(vectors), 0)
+        for v in vectors:
+            # Only run test vectors with a length of a multiple of 8 bits
+            in_bit_len = int(v['InLen'])
+            out_bit_len = int(v['OutLen'])
+            if (in_bit_len % 8 == 0) and (out_bit_len % 8 == 0):
+                with self.subTest(vector=v):
+                    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                        try:
+                            # Write the Msg to the file
+                            msg = binascii.unhexlify(v['In'])
+                            tmp.write(msg[0:in_bit_len // 8])
+                            tmp.close()
+
+                            args = [
+                                "../bin/ksum",
+                                algorithm,
+                                "-n",
+                                str(out_bit_len // 8),
+                                "--binary"
+                            ]
+
+                            # Add customization string, if not empty
+                            custom = v['S'].replace('"', '')
+                            if custom != '':
+                                args.append("-C")
+                                args.append(custom)
+
+                            # Add function name string, if not empty
+                            funcname = v['N'].replace('"', '')
+                            if funcname != '':
+                                args.append("-f")
+                                args.append(funcname)
+
+                            args.append(tmp.name)
+
+                            # Generate the checksum
+                            p = subprocess.run(
+                                args,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE
+                            )
+                            expected_stdout = v['Out'].lower() + ' *' + tmp.name + '\n'
+
+                            self.assertEqual(p.returncode, 0)
+                            self.assertEqual(p.stdout.decode('LATIN-1').replace('\r',''), expected_stdout)
+                            self.assertEqual(p.stderr, b'')
+                        finally:
+                            os.unlink(tmp.name)
+
+    def run_parallelhash_vector(self, vectors, algorithm, xof=False):
+        """
+        Helper to invoke ksum on a ParallelHash test vectors file and check the output.
+        """
+        self.assertGreater(len(vectors), 0)
+        for v in vectors:
+            with self.subTest(vector=v):
+                with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                    try:
                         # Write the Msg to the file
-                        msg = binascii.unhexlify(v['In'])
-                        tmp.write(msg[0:in_bit_len // 8])
-                        tmp.flush()
+                        msg = binascii.unhexlify(v['Msg'])
+                        tmp.write(msg)
+                        tmp.close()
 
                         args = [
                             "../bin/ksum",
                             algorithm,
-                            "--key",
-                            v['Key'],
+                            "-B",
+                            v['B'],
                             "-n",
-                            str(out_bit_len // 8),
+                            str(len(v['MD']) // 2),
                             "--binary"
                         ]
 
@@ -200,109 +308,13 @@ class TestVectors(unittest.TestCase):
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE
                         )
-                        expected_stdout = v['Out'].lower() + ' *' + tmp.name + '\n'
+                        expected_stdout = v['MD'].lower() + ' *' + tmp.name + '\n'
 
                         self.assertEqual(p.returncode, 0)
-                        self.assertEqual(p.stdout, expected_stdout.encode('LATIN-1'))
+                        self.assertEqual(p.stdout.decode('LATIN-1').replace('\r',''), expected_stdout)
                         self.assertEqual(p.stderr, b'')
-
-    def run_cshake_vector(self, vectors, algorithm):
-        """
-        Helper to invoke ksum on a KMAC test vectors file and check the output.
-        """
-        self.assertGreater(len(vectors), 0)
-        for v in vectors:
-            # Only run test vectors with a length of a multiple of 8 bits
-            in_bit_len = int(v['InLen'])
-            out_bit_len = int(v['OutLen'])
-            if (in_bit_len % 8 == 0) and (out_bit_len % 8 == 0):
-                with self.subTest(vector=v):
-                    with tempfile.NamedTemporaryFile() as tmp:
-                        # Write the Msg to the file
-                        msg = binascii.unhexlify(v['In'])
-                        tmp.write(msg[0:in_bit_len // 8])
-                        tmp.flush()
-
-                        args = [
-                            "../bin/ksum",
-                            algorithm,
-                            "-n",
-                            str(out_bit_len // 8),
-                            "--binary"
-                        ]
-
-                        # Add customization string, if not empty
-                        custom = v['S'].replace('"', '')
-                        if custom != '':
-                            args.append("-C")
-                            args.append(custom)
-
-                        # Add function name string, if not empty
-                        funcname = v['N'].replace('"', '')
-                        if funcname != '':
-                            args.append("-f")
-                            args.append(funcname)
-
-                        args.append(tmp.name)
-
-                        # Generate the checksum
-                        p = subprocess.run(
-                            args,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE
-                        )
-                        expected_stdout = v['Out'].lower() + ' *' + tmp.name + '\n'
-
-                        self.assertEqual(p.returncode, 0)
-                        self.assertEqual(p.stdout, expected_stdout.encode('LATIN-1'))
-                        self.assertEqual(p.stderr, b'')
-
-    def run_parallelhash_vector(self, vectors, algorithm, xof=False):
-        """
-        Helper to invoke ksum on a ParallelHash test vectors file and check the output.
-        """
-        self.assertGreater(len(vectors), 0)
-        for v in vectors:
-            with self.subTest(vector=v):
-                with tempfile.NamedTemporaryFile() as tmp:
-                    # Write the Msg to the file
-                    msg = binascii.unhexlify(v['Msg'])
-                    tmp.write(msg)
-                    tmp.flush()
-
-                    args = [
-                        "../bin/ksum",
-                        algorithm,
-                        "-B",
-                        v['B'],
-                        "-n",
-                        str(len(v['MD']) // 2),
-                        "--binary"
-                    ]
-
-                    # Add customization string, if not empty
-                    custom = v['S'].replace('"', '')
-                    if custom != '':
-                        args.append("-C")
-                        args.append(custom)
-
-                    # Set XOF mode, if requested
-                    if xof:
-                        args.append("--xof")
-
-                    args.append(tmp.name)
-
-                    # Generate the checksum
-                    p = subprocess.run(
-                        args,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE
-                    )
-                    expected_stdout = v['MD'].lower() + ' *' + tmp.name + '\n'
-
-                    self.assertEqual(p.returncode, 0)
-                    self.assertEqual(p.stdout, expected_stdout.encode('LATIN-1'))
-                    self.assertEqual(p.stderr, b'')
+                    finally:
+                        os.unlink(tmp.name)
 
 class TestCheckMode(unittest.TestCase):
     """
@@ -318,34 +330,40 @@ class TestCheckMode(unittest.TestCase):
         """
         for algo in algorithms:
             with self.subTest(algorithm=algo):
-                with tempfile.NamedTemporaryFile() as tmp:
-                    # Write some temporary data
-                    tmp.write("The quick brown fox jumps over the lazy dog.".encode('LATIN-1'))
-                    tmp.flush()
+                with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                    try:
+                        # Write some temporary data
+                        tmp.write("The quick brown fox jumps over the lazy dog.".encode('LATIN-1'))
+                        tmp.close()
 
-                    # Generate a checksum
-                    p = subprocess.run(
-                        args = ["../bin/ksum", algo, tmp.name],
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE
-                    )
-                    self.assertEqual(p.returncode, 0)
-                    self.assertEqual(p.stderr, b'')
-
-                    # Save the checksum to a file
-                    with tempfile.NamedTemporaryFile() as tmp_checksum:
-                        tmp_checksum.write(p.stdout)
-                        tmp_checksum.flush()
-
-                        # Verify the checksum
+                        # Generate a checksum
                         p = subprocess.run(
-                            args = ["../bin/ksum", algo, "-c", tmp_checksum.name],
+                            args = ["../bin/ksum", algo, tmp.name],
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE
                         )
                         self.assertEqual(p.returncode, 0)
-                        self.assertEqual(p.stdout, (tmp.name + ": OK\n").encode('LATIN-1'))
                         self.assertEqual(p.stderr, b'')
+
+                        # Save the checksum to a file
+                        with tempfile.NamedTemporaryFile(delete=False) as tmp_checksum:
+                            try:
+                                tmp_checksum.write(p.stdout.decode('LATIN-1').replace('\r','').encode('LATIN-1'))
+                                tmp_checksum.close()
+
+                                # Verify the checksum
+                                p = subprocess.run(
+                                    args = ["../bin/ksum", algo, "-c", tmp_checksum.name],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE
+                                )
+                                self.assertEqual(p.returncode, 0)
+                                self.assertEqual(p.stdout.decode('LATIN-1').replace('\r',''), tmp.name + ": OK\n")
+                                self.assertEqual(p.stderr, b'')
+                            finally:
+                                os.unlink(tmp_checksum.name)
+                    finally:
+                        os.unlink(tmp.name)
 
     def test_invalid_checksum(self):
         """
@@ -357,54 +375,60 @@ class TestCheckMode(unittest.TestCase):
         """
         for algo in algorithms:
             with self.subTest(algorithm=algo):
-                with tempfile.NamedTemporaryFile() as tmp:
-                    # Write some temporary data
-                    tmp.write("The quick brown fox jumps over the lazy dog.".encode('LATIN-1'))
-                    tmp.flush()
+                with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                    try:
+                        # Write some temporary data
+                        tmp.write("The quick brown fox jumps over the lazy dog.".encode('LATIN-1'))
+                        tmp.close()
 
-                    # Generate a checksum
-                    p = subprocess.run(
-                        args = ["../bin/ksum", algo, tmp.name],
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE
-                    )
-                    self.assertEqual(p.returncode, 0)
-                    self.assertEqual(p.stderr, b'')
+                        # Generate a checksum
+                        p = subprocess.run(
+                            args = ["../bin/ksum", algo, tmp.name],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE
+                        )
+                        self.assertEqual(p.returncode, 0)
+                        self.assertEqual(p.stderr, b'')
 
-                    # Corrupt the checksum by changing the last byte.
-                    m = re.match(r'(\w+) (.+)$', p.stdout.decode('LATIN-1'))
-                    self.assertIsNotNone(m)
-                    checksum = m.group(1)
-                    checksum = binascii.unhexlify(checksum)
+                        # Corrupt the checksum by changing the last byte.
+                        m = re.match(r'(\w+) [\s\*](.+)$', p.stdout.decode('LATIN-1').replace('\r',''))
+                        self.assertIsNotNone(m)
+                        checksum = m.group(1)
+                        checksum = binascii.unhexlify(checksum)
 
-                    # Corrupt every checksum byte individually
-                    # This checks that ksum actually considers every byte
-                    for n in range(len(checksum)):
-                        with self.subTest(n=n):
-                            corrupted = bytearray(checksum)
-                            corrupted[n] = (corrupted[n] + 1) % 256
-                            corrupted = binascii.hexlify(corrupted)
+                        # Corrupt every checksum byte individually
+                        # This checks that ksum actually considers every byte
+                        for n in range(len(checksum)):
+                            with self.subTest(n=n):
+                                corrupted = bytearray(checksum)
+                                corrupted[n] = (corrupted[n] + 1) % 256
+                                corrupted = binascii.hexlify(corrupted)
 
-                            # Save the checksum to a file
-                            with tempfile.NamedTemporaryFile() as tmp_checksum:
-                                tmp_checksum.write(corrupted + (' ' + m.group(2)).encode('LATIN-1'))
-                                tmp_checksum.flush()
+                                # Save the checksum to a file
+                                with tempfile.NamedTemporaryFile(delete=False) as tmp_checksum:
+                                    try:
+                                        tmp_checksum.write(corrupted + (' *' + m.group(2)).encode('LATIN-1'))
+                                        tmp_checksum.close()
 
-                                # Verify the checksum
-                                p = subprocess.run(
-                                    args = ["../bin/ksum", algo, "-c", tmp_checksum.name],
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE
-                                )
-                                self.assertNotEqual(p.returncode, 0)
-                                self.assertEqual(p.stdout, b'') # Should print to stderr
+                                        # Verify the checksum
+                                        p = subprocess.run(
+                                            args = ["../bin/ksum", algo, "-c", tmp_checksum.name],
+                                            stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE
+                                        )
+                                        self.assertNotEqual(p.returncode, 0)
+                                        self.assertEqual(p.stdout, b'') # Should print to stderr
 
-                                # Expect the first line of the stderr output to contain the failed file name
-                                # E.g. filename: FAILED
-                                lines = p.stderr.decode('LATIN-1').split('\n')
-                                self.assertEqual(len(lines), 3)
-                                self.assertEqual(lines[0], tmp.name + ": FAILED")
-                                self.assertEqual(lines[-1], '')
+                                        # Expect the first line of the stderr output to contain the failed file name
+                                        # E.g. filename: FAILED
+                                        lines = p.stderr.decode('LATIN-1').replace('\r','').split('\n')
+                                        self.assertEqual(len(lines), 3)
+                                        self.assertEqual(lines[0], tmp.name + ": FAILED")
+                                        self.assertEqual(lines[-1], '')
+                                    finally:
+                                        os.unlink(tmp_checksum.name)
+                    finally:
+                        os.unlink(tmp.name)
 
     def test_multiple_files(self):
         """
@@ -412,54 +436,62 @@ class TestCheckMode(unittest.TestCase):
         """
         for algo in algorithms:
             with self.subTest(algorithm=algo):
-                with tempfile.NamedTemporaryFile() as tmp1:
-                    with tempfile.NamedTemporaryFile() as tmp2:
-                        with tempfile.NamedTemporaryFile() as tmp3:
-                            # Write some temporary data
-                            tmp1.write("The quick brown fox jumps over the lazy dog.".encode('LATIN-1'))
-                            tmp1.flush()
-                            tmp2.write("Lorem ipsum dolor sit amet".encode('LATIN-1'))
-                            tmp2.flush()
-                            tmp3.write("abcdefghijklmnopqrstuvwxyz".encode('LATIN-1'))
-                            tmp3.flush()
+                with tempfile.NamedTemporaryFile(delete=False) as tmp1:
+                    with tempfile.NamedTemporaryFile(delete=False) as tmp2:
+                        with tempfile.NamedTemporaryFile(delete=False) as tmp3:
+                            try:
+                                # Write some temporary data
+                                tmp1.write("The quick brown fox jumps over the lazy dog.".encode('LATIN-1'))
+                                tmp1.close()
+                                tmp2.write("Lorem ipsum dolor sit amet".encode('LATIN-1'))
+                                tmp2.close()
+                                tmp3.write("abcdefghijklmnopqrstuvwxyz".encode('LATIN-1'))
+                                tmp3.close()
 
-                            # Generate a checksum
-                            p = subprocess.run(
-                                args = ["../bin/ksum", algo, tmp1.name, tmp2.name, tmp3.name],
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE
-                            )
-                            self.assertEqual(p.returncode, 0)
-                            self.assertEqual(p.stderr, b'')
-
-                            # Check stdout format
-                            stdout_lines = p.stdout.decode('LATIN-1').split('\n')
-                            self.assertEqual(len(stdout_lines), 4)
-                            self.assertTrue(stdout_lines[0].endswith(tmp1.name))
-                            self.assertTrue(stdout_lines[1].endswith(tmp2.name))
-                            self.assertTrue(stdout_lines[2].endswith(tmp3.name))
-                            self.assertEqual(stdout_lines[3], '')
-
-                            # Save the checksums to a file
-                            with tempfile.NamedTemporaryFile() as tmp_checksum:
-                                tmp_checksum.write(p.stdout)
-                                tmp_checksum.flush()
-
-                                # Verify the checksum
+                                # Generate a checksum
                                 p = subprocess.run(
-                                    args = ["../bin/ksum", algo, "-c", tmp_checksum.name],
+                                    args = ["../bin/ksum", algo, tmp1.name, tmp2.name, tmp3.name],
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE
                                 )
                                 self.assertEqual(p.returncode, 0)
                                 self.assertEqual(p.stderr, b'')
 
-                                stdout_lines = p.stdout.decode('LATIN-1').split('\n')
+                                # Check stdout format
+                                stdout_lines = p.stdout.decode('LATIN-1').replace('\r','').split('\n')
                                 self.assertEqual(len(stdout_lines), 4)
-                                self.assertEqual(stdout_lines[0], tmp1.name + ': OK')
-                                self.assertEqual(stdout_lines[1], tmp2.name + ': OK')
-                                self.assertEqual(stdout_lines[2], tmp3.name + ': OK')
+                                self.assertTrue(stdout_lines[0].endswith(tmp1.name))
+                                self.assertTrue(stdout_lines[1].endswith(tmp2.name))
+                                self.assertTrue(stdout_lines[2].endswith(tmp3.name))
                                 self.assertEqual(stdout_lines[3], '')
+
+                                # Save the checksums to a file
+                                with tempfile.NamedTemporaryFile(delete=False) as tmp_checksum:
+                                    try:
+                                        tmp_checksum.write(p.stdout)
+                                        tmp_checksum.close()
+
+                                        # Verify the checksum
+                                        p = subprocess.run(
+                                            args = ["../bin/ksum", algo, "-c", tmp_checksum.name],
+                                            stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE
+                                        )
+                                        self.assertEqual(p.returncode, 0)
+                                        self.assertEqual(p.stderr, b'')
+
+                                        stdout_lines = p.stdout.decode('LATIN-1').replace('\r','').split('\n')
+                                        self.assertEqual(len(stdout_lines), 4)
+                                        self.assertEqual(stdout_lines[0], tmp1.name + ': OK')
+                                        self.assertEqual(stdout_lines[1], tmp2.name + ': OK')
+                                        self.assertEqual(stdout_lines[2], tmp3.name + ': OK')
+                                        self.assertEqual(stdout_lines[3], '')
+                                    finally:
+                                        os.unlink(tmp_checksum.name)
+                            finally:
+                                os.unlink(tmp1.name)
+                                os.unlink(tmp2.name)
+                                os.unlink(tmp3.name)
 
     def test_quiet(self):
         """
@@ -467,34 +499,40 @@ class TestCheckMode(unittest.TestCase):
         """
         for algo in algorithms:
             with self.subTest(algorithm=algo):
-                with tempfile.NamedTemporaryFile() as tmp:
-                    # Write some temporary data
-                    tmp.write("The quick brown fox jumps over the lazy dog.".encode('LATIN-1'))
-                    tmp.flush()
+                with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                    try:
+                        # Write some temporary data
+                        tmp.write("The quick brown fox jumps over the lazy dog.".encode('LATIN-1'))
+                        tmp.close()
 
-                    # Generate a checksum
-                    p = subprocess.run(
-                        args = ["../bin/ksum", algo, tmp.name],
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE
-                    )
-                    self.assertEqual(p.returncode, 0)
-                    self.assertEqual(p.stderr, b'')
-
-                    # Save the checksum to a file
-                    with tempfile.NamedTemporaryFile() as tmp_checksum:
-                        tmp_checksum.write(p.stdout)
-                        tmp_checksum.flush()
-
-                        # Verify the checksum
+                        # Generate a checksum
                         p = subprocess.run(
-                            args = ["../bin/ksum", algo, "-c", "--quiet", tmp_checksum.name],
+                            args = ["../bin/ksum", algo, tmp.name],
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE
                         )
                         self.assertEqual(p.returncode, 0)
-                        self.assertEqual(p.stdout, b'')
                         self.assertEqual(p.stderr, b'')
+
+                        # Save the checksum to a file
+                        with tempfile.NamedTemporaryFile(delete=False) as tmp_checksum:
+                            try:
+                                tmp_checksum.write(p.stdout)
+                                tmp_checksum.close()
+
+                                # Verify the checksum
+                                p = subprocess.run(
+                                    args = ["../bin/ksum", algo, "-c", "--quiet", tmp_checksum.name],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE
+                                )
+                                self.assertEqual(p.returncode, 0)
+                                self.assertEqual(p.stdout, b'')
+                                self.assertEqual(p.stderr, b'')
+                            finally:
+                                os.unlink(tmp_checksum.name)
+                    finally:
+                        os.unlink(tmp.name)
 
 
     def test_strict(self):
@@ -504,42 +542,48 @@ class TestCheckMode(unittest.TestCase):
         """
         for algo in algorithms:
             with self.subTest(algorithm=algo):
-                with tempfile.NamedTemporaryFile() as tmp:
-                    # Write some temporary data
-                    tmp.write("The quick brown fox jumps over the lazy dog.".encode('LATIN-1'))
-                    tmp.flush()
+                with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                    try:
+                        # Write some temporary data
+                        tmp.write("The quick brown fox jumps over the lazy dog.".encode('LATIN-1'))
+                        tmp.close()
 
-                    # Generate a checksum
-                    p = subprocess.run(
-                        args = ["../bin/ksum", algo, tmp.name],
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE
-                    )
-                    self.assertEqual(p.returncode, 0)
-                    self.assertEqual(p.stderr, b'')
-
-                    # Save a bad checksum to a file
-                    with tempfile.NamedTemporaryFile() as tmp_checksum:
-                        tmp_checksum.write(("0123456789abcdef0123456789abcdefgh  " + tmp.name).encode())
-                        tmp_checksum.flush()
-
-                        # Verify the (bad) checksum in --strict mode
+                        # Generate a checksum
                         p = subprocess.run(
-                            args = ["../bin/ksum", algo, "-c", "--strict", tmp_checksum.name],
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE
-                        )
-                        self.assertNotEqual(p.returncode, 0)
-                        self.assertEqual(p.stdout, b'')
-
-                        # Verify the (bad) checksum in non-strict mode
-                        p = subprocess.run(
-                            args = ["../bin/ksum", algo, "-c", tmp_checksum.name],
+                            args = ["../bin/ksum", algo, tmp.name],
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE
                         )
                         self.assertEqual(p.returncode, 0)
-                        self.assertEqual(p.stdout, b'')
+                        self.assertEqual(p.stderr, b'')
+
+                        # Save a bad checksum to a file
+                        with tempfile.NamedTemporaryFile(delete=False) as tmp_checksum:
+                            try:
+                                tmp_checksum.write(("0123456789abcdef0123456789abcdefgh  " + tmp.name).encode())
+                                tmp_checksum.close()
+
+                                # Verify the (bad) checksum in --strict mode
+                                p = subprocess.run(
+                                    args = ["../bin/ksum", algo, "-c", "--strict", tmp_checksum.name],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE
+                                )
+                                self.assertNotEqual(p.returncode, 0)
+                                self.assertEqual(p.stdout, b'')
+
+                                # Verify the (bad) checksum in non-strict mode
+                                p = subprocess.run(
+                                    args = ["../bin/ksum", algo, "-c", tmp_checksum.name],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE
+                                )
+                                self.assertEqual(p.returncode, 0)
+                                self.assertEqual(p.stdout, b'')
+                            finally:
+                                os.unlink(tmp_checksum.name)
+                    finally:
+                        os.unlink(tmp.name)
 
 if __name__ == '__main__':
     unittest.main()
