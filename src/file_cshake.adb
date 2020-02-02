@@ -67,12 +67,10 @@ is
                    Function_Name => To_String (Configurations.Function_Name),
                    Customization => To_String (Configurations.Customization));
 
-      while not End_Of_File (File) loop
+      loop
          Read_Byte_Array (Stream (File), Buffer, Length);
 
-         if Length = 0 then
-            raise Program_Error with "Could not read from stream";
-         end if;
+         exit when Length = 0;
 
          CSHAKE.Update (Ctx, Buffer (Buffer'First .. Buffer'First + (Length - 1)));
       end loop;
@@ -105,12 +103,10 @@ is
                    Function_Name => To_String (Configurations.Function_Name),
                    Customization => To_String (Configurations.Customization));
 
-      while not End_Of_File (File) loop
+      loop
          Read_Byte_Array (Stream (File), Buffer, Length);
 
-         if Length = 0 then
-            raise Program_Error with "Could not read from stream";
-         end if;
+         exit when Length = 0;
 
          CSHAKE.Update (Ctx, Buffer (Buffer'First .. Buffer'First + (Length - 1)));
       end loop;

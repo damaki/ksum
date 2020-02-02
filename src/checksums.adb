@@ -17,12 +17,14 @@
 --  You should have received a copy of the GNU General Public License
 --  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
+with Ada.Characters.Latin_1;
 with Ada.Text_IO;
 with Ada.Text_IO.Unbounded_IO;
 with Ada.Command_Line;
 with Ada.Directories;       use Ada.Directories;
 with Ada.Exceptions;        use Ada.Exceptions;
 with Ada.IO_Exceptions;
+with Ada.Strings.Maps;
 
 with Configurations;        use Configurations;
 with Diagnostics;           use Diagnostics;
@@ -404,7 +406,16 @@ is
       File_Loop :
       while not Ada.Text_IO.End_Of_File (File) loop
          declare
-            Line : constant Unbounded_String := Ada.Text_IO.Unbounded_IO.Get_Line (File);
+            --  Trim carriage return characters from the end of the line.
+            --  On Windows this is done automatically by Get_Line, but on Unix
+            --  Get_Line does not consume the CR. Therefore, we trim it manually
+            --  to ensure that ksum on Unix can parse checksum files generated
+            --  on Windows.
+            Line : constant Unbounded_String :=
+              Trim (Source => Ada.Text_IO.Unbounded_IO.Get_Line (File),
+                    Left   => Ada.Strings.Maps.Null_Set,
+                    Right  => Ada.Strings.Maps.To_Set (Ada.Characters.Latin_1.CR));
+
             File_Name     : Unbounded_String;
             Expected_Hash : Unbounded_String;
 
