@@ -17,27 +17,24 @@
 --  You should have received a copy of the GNU General Public License
 --  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
-with Ada.Text_IO;
-with Keccak.Generic_KangarooTwelve;
+with Ada.Streams;
+with Keccak.Generic_Hash;
 with Keccak.Types;
-with Diagnostics;                   use Diagnostics;
+with Diagnostics;         use Diagnostics;
 
 generic
-   with package K12 is new Keccak.Generic_KangarooTwelve (<>);
-package File_K12
+   with package Hash is new Keccak.Generic_Hash (<>);
+package Stream_Hashing
 is
 
-   procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
-                        Buffer : in out Keccak.Types.Byte_Array);
+   procedure Hash_Stream (Stream : in out Ada.Streams.Root_Stream_Type'Class;
+                          Buffer : in out Keccak.Types.Byte_Array);
+   --  Generate a hash over a stream and print the result.
 
-   procedure Check_File (File          : in     Ada.Text_IO.File_Type;
-                         Buffer        : in out Keccak.Types.Byte_Array;
-                         Expected_Hash : in     Keccak.Types.Byte_Array;
-                         Result        :    out Diagnostic);
+   procedure Check_Stream (Stream        : in out Ada.Streams.Root_Stream_Type'Class;
+                           Buffer        : in out Keccak.Types.Byte_Array;
+                           Expected_Hash : in     Keccak.Types.Byte_Array;
+                           Result        :    out Diagnostic);
+   --  Check the hash of a stream against an expected hash.
 
-private
-
-   procedure Print_Output (Ctx    : in out K12.Context;
-                           Buffer : in out Keccak.Types.Byte_Array);
-
-end File_K12;
+end Stream_Hashing;

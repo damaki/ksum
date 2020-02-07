@@ -17,82 +17,74 @@
 --  You should have received a copy of the GNU General Public License
 --  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
-with Ada.Strings.Unbounded;    use Ada.Strings.Unbounded;
-with Ada.Text_IO;              use Ada.Text_IO;
-with Ada.Text_IO.Text_Streams; use Ada.Text_IO.Text_Streams;
 with Configurations;
 with Hex_Strings;              use Hex_Strings;
 with Stream_Byte_Arrays;       use Stream_Byte_Arrays;
 
-package body File_K12
+package body Stream_XOF
 is
 
    --------------------
    --  Print_Output  --
    --------------------
 
-   procedure Print_Output (Ctx    : in out K12.Context;
+   procedure Print_Output (Ctx    : in out XOF.Context;
                            Buffer : in out Keccak.Types.Byte_Array)
    is
       Remaining : Long_Long_Integer;
 
    begin
-      K12.Finish (Ctx           => Ctx,
-                  Customization => To_String (Configurations.Customization));
-
       Remaining := Configurations.Output_Length;
 
       while Remaining >= Long_Long_Integer (Buffer'Length) loop
-         K12.Extract (Ctx, Buffer);
+         XOF.Extract (Ctx, Buffer);
          Print_Hex_String (Buffer);
 
          Remaining := Remaining - Long_Long_Integer (Buffer'Length);
       end loop;
 
       if Remaining > 0 then
-         K12.Extract (Ctx, Buffer (Buffer'First .. Buffer'First + Natural (Remaining - 1)));
+         XOF.Extract (Ctx, Buffer (Buffer'First .. Buffer'First + Natural (Remaining - 1)));
          Print_Hex_String (Buffer (Buffer'First .. Buffer'First + Natural (Remaining - 1)));
       end if;
    end Print_Output;
 
-   -----------------
-   --  Hash_File  --
-   -----------------
+   -------------------
+   --  Hash_Stream  --
+   -------------------
 
-   procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
-                        Buffer : in out Keccak.Types.Byte_Array)
+   procedure Hash_Stream (Stream : in out Ada.Streams.Root_Stream_Type'Class;
+                          Buffer : in out Keccak.Types.Byte_Array)
    is
-      Ctx : K12.Context;
+      Ctx : XOF.Context;
       Length : Natural;
 
    begin
-      K12.Init (Ctx);
+      XOF.Init (Ctx);
 
       loop
-         Read_Byte_Array (Stream (File), Buffer, Length);
+         Read_Byte_Array (Stream, Buffer, Length);
 
          exit when Length = 0;
 
-         K12.Update (Ctx, Buffer (Buffer'First .. Buffer'First + (Length - 1)));
+         XOF.Update (Ctx, Buffer (Buffer'First .. Buffer'First + (Length - 1)));
       end loop;
 
       Print_Output (Ctx, Buffer);
+   end Hash_Stream;
 
-      pragma Unreferenced (Ctx);
-   end Hash_File;
+   --------------------
+   --  Check_Stream  --
+   --------------------
 
-   ------------------
-   --  Check_File  --
-   ------------------
-
-   procedure Check_File (File          : in     Ada.Text_IO.File_Type;
-                         Buffer        : in out Keccak.Types.Byte_Array;
-                         Expected_Hash : in     Keccak.Types.Byte_Array;
-                         Result        :    out Diagnostic)
+   procedure Check_Stream (Stream : in out Ada.Streams.Root_Stream_Type'Class;
+                           Buffer        : in out Keccak.Types.Byte_Array;
+                           Expected_Hash : in     Keccak.Types.Byte_Array;
+                           Result        :    out Diagnostic)
    is
       use type Keccak.Types.Byte_Array;
 
-      Ctx    : K12.Context;
+      Ctx    : XOF.Context;
       Length : Natural;
 
       Offset    : Natural := 0;
@@ -102,25 +94,22 @@ is
       J : Keccak.Types.Index_Number;
 
    begin
-      K12.Init (Ctx);
+      XOF.Init (Ctx);
 
       loop
-         Read_Byte_Array (Stream (File), Buffer, Length);
+         Read_Byte_Array (Stream, Buffer, Length);
 
          exit when Length = 0;
 
-         K12.Update (Ctx, Buffer (Buffer'First .. Buffer'First + (Length - 1)));
+         XOF.Update (Ctx, Buffer (Buffer'First .. Buffer'First + (Length - 1)));
       end loop;
-
-      K12.Finish (Ctx           => Ctx,
-                  Customization => To_String (Configurations.Customization));
 
       Result := No_Error; --  Unless proven otherwise.
 
       --  Verify the output in chunks of size: Buffer'Length
       while Remaining >= Buffer'Length loop
 
-         K12.Extract (Ctx, Buffer);
+         XOF.Extract (Ctx, Buffer);
 
          I := Expected_Hash'First + Offset;
          if Buffer /= Expected_Hash (I .. I + Buffer'Length - 1) then
@@ -133,7 +122,7 @@ is
 
       --  Verify last chunk
       if Remaining > 0 then
-         K12.Extract (Ctx, Buffer (Buffer'First .. Buffer'First + Remaining - 1));
+         XOF.Extract (Ctx, Buffer (Buffer'First .. Buffer'First + Remaining - 1));
 
          I := Buffer'First;
          J := Expected_Hash'First + Offset;
@@ -141,6 +130,6 @@ is
             Result := Checksum_Error;
          end if;
       end if;
-   end Check_File;
+   end Check_Stream;
 
-end File_K12;
+end Stream_XOF;

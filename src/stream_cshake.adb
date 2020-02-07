@@ -18,13 +18,11 @@
 --  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
 with Ada.Strings.Unbounded;    use Ada.Strings.Unbounded;
-with Ada.Text_IO;              use Ada.Text_IO;
-with Ada.Text_IO.Text_Streams; use Ada.Text_IO.Text_Streams;
 with Configurations;
 with Hex_Strings;              use Hex_Strings;
 with Stream_Byte_Arrays;       use Stream_Byte_Arrays;
 
-package body File_CSHAKE
+package body Stream_CSHAKE
 is
 
    --------------------
@@ -52,12 +50,12 @@ is
       end if;
    end Print_Output;
 
-   ------------------------
-   --  Hash_File_CSHAKE  --
-   ------------------------
+   --------------------------
+   --  Hash_Stream_CSHAKE  --
+   --------------------------
 
-   procedure Hash_File_CSHAKE (File   : in     Ada.Text_IO.File_Type;
-                               Buffer : in out Keccak.Types.Byte_Array)
+   procedure Hash_Stream_CSHAKE (Stream : in out Ada.Streams.Root_Stream_Type'Class;
+                                 Buffer : in out Keccak.Types.Byte_Array)
    is
       Ctx    : CSHAKE.Context;
       Length : Natural;
@@ -68,7 +66,7 @@ is
                    Customization => To_String (Configurations.Customization));
 
       loop
-         Read_Byte_Array (Stream (File), Buffer, Length);
+         Read_Byte_Array (Stream, Buffer, Length);
 
          exit when Length = 0;
 
@@ -76,16 +74,16 @@ is
       end loop;
 
       Print_Output (Ctx, Buffer);
-   end Hash_File_CSHAKE;
+   end Hash_Stream_CSHAKE;
 
-   -------------------------
-   --  Check_File_CSHAKE  --
-   -------------------------
+   ---------------------------
+   --  Check_Stream_CSHAKE  --
+   ---------------------------
 
-   procedure Check_File_CSHAKE (File          : in     Ada.Text_IO.File_Type;
-                                Buffer        : in out Keccak.Types.Byte_Array;
-                                Expected_Hash : in     Keccak.Types.Byte_Array;
-                                Result        :    out Diagnostic)
+   procedure Check_Stream_CSHAKE (Stream        : in out Ada.Streams.Root_Stream_Type'Class;
+                                  Buffer        : in out Keccak.Types.Byte_Array;
+                                  Expected_Hash : in     Keccak.Types.Byte_Array;
+                                  Result        :    out Diagnostic)
    is
       use type Keccak.Types.Byte_Array;
 
@@ -104,7 +102,7 @@ is
                    Customization => To_String (Configurations.Customization));
 
       loop
-         Read_Byte_Array (Stream (File), Buffer, Length);
+         Read_Byte_Array (Stream, Buffer, Length);
 
          exit when Length = 0;
 
@@ -137,14 +135,14 @@ is
             Result := Checksum_Error;
          end if;
       end if;
-   end Check_File_CSHAKE;
+   end Check_Stream_CSHAKE;
 
-   -----------------
-   --  Hash_File  --
-   -----------------
+   -------------------
+   --  Hash_Stream  --
+   -------------------
 
-   procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
-                        Buffer : in out Keccak.Types.Byte_Array)
+   procedure Hash_Stream (Stream : in out Ada.Streams.Root_Stream_Type'Class;
+                          Buffer : in out Keccak.Types.Byte_Array)
    is
    begin
       if (Configurations.Customization = Null_Unbounded_String
@@ -153,21 +151,21 @@ is
          --  In the case where both the customization and function name strings
          --  are the empty strings, cSHAKE is equivalent to SHAKE.
          --  See Section 3.3 of NIST SP 800-185 for details.
-         SHAKE_File_Hashing.Hash_File (File, Buffer);
+         SHAKE_Stream_Hashing.Hash_Stream (Stream, Buffer);
 
       else
-         Hash_File_CSHAKE (File, Buffer);
+         Hash_Stream_CSHAKE (Stream, Buffer);
       end if;
-   end Hash_File;
+   end Hash_Stream;
 
-   ------------------
-   --  Check_File  --
-   ------------------
+   --------------------
+   --  Check_Stream  --
+   --------------------
 
-   procedure Check_File (File          : in     Ada.Text_IO.File_Type;
-                         Buffer        : in out Keccak.Types.Byte_Array;
-                         Expected_Hash : in     Keccak.Types.Byte_Array;
-                         Result        :    out Diagnostic)
+   procedure Check_Stream (Stream        : in out Ada.Streams.Root_Stream_Type'Class;
+                           Buffer        : in out Keccak.Types.Byte_Array;
+                           Expected_Hash : in     Keccak.Types.Byte_Array;
+                           Result        :    out Diagnostic)
    is
    begin
       if (Configurations.Customization = Null_Unbounded_String
@@ -176,11 +174,11 @@ is
          --  In the case where both the customization and function name strings
          --  are the empty strings, cSHAKE is equivalent to SHAKE.
          --  See Section 3.3 of NIST SP 800-185 for details.
-         SHAKE_File_Hashing.Check_File (File, Buffer, Expected_Hash, Result);
+         SHAKE_Stream_Hashing.Check_Stream (Stream, Buffer, Expected_Hash, Result);
 
       else
-         Check_File_CSHAKE (File, Buffer, Expected_Hash, Result);
+         Check_Stream_CSHAKE (Stream, Buffer, Expected_Hash, Result);
       end if;
-   end Check_File;
+   end Check_Stream;
 
-end File_CSHAKE;
+end Stream_CSHAKE;

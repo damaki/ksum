@@ -17,25 +17,25 @@
 --  You should have received a copy of the GNU General Public License
 --  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
-with Ada.Text_IO;
-with File_XOF;
+with Ada.Streams;
+with Stream_XOF;
 with Keccak.Generic_CSHAKE;
 with Keccak.Types;
 with Diagnostics;           use Diagnostics;
 
 generic
    with package CSHAKE is new Keccak.Generic_CSHAKE (<>);
-   with package SHAKE_File_Hashing  is new File_XOF (<>);
-package File_CSHAKE
+   with package SHAKE_Stream_Hashing  is new Stream_XOF (<>);
+package Stream_CSHAKE
 is
 
-   procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
-                        Buffer : in out Keccak.Types.Byte_Array);
+   procedure Hash_Stream (Stream : in out Ada.Streams.Root_Stream_Type'Class;
+                          Buffer : in out Keccak.Types.Byte_Array);
 
-   procedure Check_File (File          : in     Ada.Text_IO.File_Type;
-                         Buffer        : in out Keccak.Types.Byte_Array;
-                         Expected_Hash : in     Keccak.Types.Byte_Array;
-                         Result        :    out Diagnostic);
+   procedure Check_Stream (Stream        : in out Ada.Streams.Root_Stream_Type'Class;
+                           Buffer        : in out Keccak.Types.Byte_Array;
+                           Expected_Hash : in     Keccak.Types.Byte_Array;
+                           Result        :    out Diagnostic);
 
 private
 
@@ -43,13 +43,13 @@ private
                            Buffer : in out Keccak.Types.Byte_Array);
    --  Print the output of a CSHAKE context.
 
-   procedure Hash_File_CSHAKE (File   : in     Ada.Text_IO.File_Type;
-                               Buffer : in out Keccak.Types.Byte_Array);
+   procedure Hash_Stream_CSHAKE (Stream : in out Ada.Streams.Root_Stream_Type'Class;
+                                 Buffer : in out Keccak.Types.Byte_Array);
    --  Hash the specified file and print the output
 
-   procedure Check_File_CSHAKE (File          : in     Ada.Text_IO.File_Type;
-                                Buffer        : in out Keccak.Types.Byte_Array;
-                                Expected_Hash : in     Keccak.Types.Byte_Array;
-                                Result        :    out Diagnostic);
+   procedure Check_Stream_CSHAKE (Stream        : in out Ada.Streams.Root_Stream_Type'Class;
+                                  Buffer        : in out Keccak.Types.Byte_Array;
+                                  Expected_Hash : in     Keccak.Types.Byte_Array;
+                                  Result        :    out Diagnostic);
 
-end File_CSHAKE;
+end Stream_CSHAKE;
