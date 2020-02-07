@@ -17,20 +17,18 @@
 --  You should have received a copy of the GNU General Public License
 --  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
-with Ada.Text_IO;              use Ada.Text_IO;
-with Ada.Text_IO.Text_Streams; use Ada.Text_IO.Text_Streams;
 with Hex_Strings;              use Hex_Strings;
 with Stream_Byte_Arrays;       use Stream_Byte_Arrays;
 
-package body File_Hashing
+package body Stream_Hashing
 is
 
-   -----------------
-   --  Hash_File  --
-   -----------------
+   -------------------
+   --  Hash_Stream  --
+   -------------------
 
-   procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
-                        Buffer : in out Keccak.Types.Byte_Array)
+   procedure Hash_Stream (Stream : in out Ada.Streams.Root_Stream_Type'Class;
+                          Buffer : in out Keccak.Types.Byte_Array)
    is
       Ctx    : Hash.Context;
       Length : Natural;
@@ -41,7 +39,7 @@ is
       Hash. Init (Ctx);
 
       loop
-         Read_Byte_Array (Stream (File), Buffer, Length);
+         Read_Byte_Array (Stream, Buffer, Length);
 
          exit when Length = 0;
 
@@ -51,16 +49,16 @@ is
       Hash.Final (Ctx, Digest);
 
       Print_Hex_String (Digest);
-   end Hash_File;
+   end Hash_Stream;
 
-   ------------------
-   --  Check_File  --
-   ------------------
+   --------------------
+   --  Check_Stream  --
+   --------------------
 
-   procedure Check_File (File          : in     Ada.Text_IO.File_Type;
-                         Buffer        : in out Keccak.Types.Byte_Array;
-                         Expected_Hash : in     Keccak.Types.Byte_Array;
-                         Result        :    out Diagnostic)
+   procedure Check_Stream (Stream        : in out Ada.Streams.Root_Stream_Type'Class;
+                           Buffer        : in out Keccak.Types.Byte_Array;
+                           Expected_Hash : in     Keccak.Types.Byte_Array;
+                           Result        :    out Diagnostic)
    is
       use type Keccak.Types.Byte_Array;
 
@@ -77,7 +75,7 @@ is
          Hash. Init (Ctx);
 
          loop
-            Read_Byte_Array (Stream (File), Buffer, Length);
+            Read_Byte_Array (Stream, Buffer, Length);
 
             exit when Length = 0;
 
@@ -92,6 +90,6 @@ is
             Result := No_Error;
          end if;
       end if;
-   end Check_File;
+   end Check_Stream;
 
-end File_Hashing;
+end Stream_Hashing;

@@ -18,13 +18,11 @@
 --  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
 with Ada.Strings.Unbounded;    use Ada.Strings.Unbounded;
-with Ada.Text_IO;              use Ada.Text_IO;
-with Ada.Text_IO.Text_Streams; use Ada.Text_IO.Text_Streams;
 with Configurations;           use Configurations;
 with Hex_Strings;              use Hex_Strings;
 with Stream_Byte_Arrays;       use Stream_Byte_Arrays;
 
-package body File_ParallelHash
+package body Stream_ParallelHash
 is
 
    --------------------
@@ -75,12 +73,12 @@ is
       end if;
    end Print_Output;
 
-   -----------------
-   --  Hash_File  --
-   -----------------
+   -------------------
+   --  Hash_Stream  --
+   -------------------
 
-   procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
-                        Buffer : in out Keccak.Types.Byte_Array)
+   procedure Hash_Stream (Stream : in out Ada.Streams.Root_Stream_Type'Class;
+                          Buffer : in out Keccak.Types.Byte_Array)
    is
       Ctx    : ParallelHash.Context;
       Length : Natural;
@@ -92,7 +90,7 @@ is
          Customization => To_String (Configurations.Customization));
 
       loop
-         Read_Byte_Array (Stream (File), Buffer, Length);
+         Read_Byte_Array (Stream, Buffer, Length);
 
          exit when Length = 0;
 
@@ -100,16 +98,16 @@ is
       end loop;
 
       Print_Output (Ctx, Buffer);
-   end Hash_File;
+   end Hash_Stream;
 
-   ------------------
-   --  Check_File  --
-   ------------------
+   --------------------
+   --  Check_Stream  --
+   --------------------
 
-   procedure Check_File (File          : in     Ada.Text_IO.File_Type;
-                         Buffer        : in out Keccak.Types.Byte_Array;
-                         Expected_Hash : in     Keccak.Types.Byte_Array;
-                         Result        :    out Diagnostic)
+   procedure Check_Stream (Stream        : in out Ada.Streams.Root_Stream_Type'Class;
+                           Buffer        : in out Keccak.Types.Byte_Array;
+                           Expected_Hash : in     Keccak.Types.Byte_Array;
+                           Result        :    out Diagnostic)
    is
       use type Keccak.Types.Byte_Array;
 
@@ -123,7 +121,7 @@ is
          Customization => To_String (Configurations.Customization));
 
       loop
-         Read_Byte_Array (Stream (File), Buffer, Length);
+         Read_Byte_Array (Stream, Buffer, Length);
 
          exit when Length = 0;
 
@@ -135,7 +133,7 @@ is
       else
          Check_Normal_Output (Ctx, Expected_Hash, Result);
       end if;
-   end Check_File;
+   end Check_Stream;
 
    ------------------------
    --  Check_XOF_Output  --
@@ -211,4 +209,4 @@ is
       end;
    end Check_Normal_Output;
 
-end File_ParallelHash;
+end Stream_ParallelHash;

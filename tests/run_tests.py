@@ -2,6 +2,7 @@
 import binascii
 import os
 import os.path
+import platform
 import re
 import subprocess
 import tempfile
@@ -665,6 +666,107 @@ class TestCheckMode(unittest.TestCase):
                         os.unlink(tmp2.name)
                         os.unlink(tmp3.name)
 
+    @unittest.skipIf(platform.system() != 'Windows', 'Requires Windows')
+    def test_text_translation(self):
+        """
+        This test checks that CRLF characters are properly converted to LF
+        when generating and verifying checksums.
+
+        This is only applicable on Windows, which performs text translation.
+        Unix systems treat binary and text mode as the same.
+        """
+        crlf_text = "Hello\r\nWorld!".encode('LATIN-1')
+        lf_text   = "Hello\nWorld!".encode('LATIN-1')
+
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_crlf:
+            with tempfile.NamedTemporaryFile(delete=False) as tmp_lf:
+                try:
+                    tmp_crlf.write(crlf_text)
+                    tmp_crlf.close()
+
+                    tmp_lf.write(lf_text)
+                    tmp_lf.close()
+
+                    # Generate outputs
+
+                    crlf_text_checksum = subprocess.run(
+                        args = ["../bin/ksum", "-t", tmp_crlf.name],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE
+                    )
+                    self.assertEqual(crlf_text_checksum.returncode, 0)
+
+                    lf_text_checksum = subprocess.run(
+                        args = ["../bin/ksum", "-t", tmp_lf.name],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE
+                    )
+                    self.assertEqual(lf_text_checksum.returncode,   0)
+
+                    crlf_bin_checksum = subprocess.run(
+                        args = ["../bin/ksum", "-b", tmp_crlf.name],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE
+                    )
+                    self.assertEqual(crlf_bin_checksum.returncode,  0)
+
+                    lf_bin_checksum = subprocess.run(
+                        args = ["../bin/ksum", "-b", tmp_lf.name],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE
+                    )
+                    self.assertEqual(lf_bin_checksum.returncode,    0)
+
+                    # In text mode, both checksums should be the same (\r\n converted to \n so inputs are equal)
+                    crlf_checksum = crlf_text_checksum.stdout.decode('LATIN-1').split(' ')[0]
+                    lf_checksum   =   lf_text_checksum.stdout.decode('LATIN-1').split(' ')[0]
+                    self.assertEqual(crlf_checksum, lf_checksum)
+
+                    # In binary mode, the checksums should be different.
+                    crlf_checksum = crlf_bin_checksum.stdout.decode('LATIN-1').split(' ')[0]
+                    lf_checksum   =   lf_bin_checksum.stdout.decode('LATIN-1').split(' ')[0]
+                    self.assertNotEqual(crlf_checksum, lf_checksum)
+
+                    # Test that --check mode can verify the checksums
+                    result = subprocess.run(
+                        args = ["../bin/ksum", "-c", "-t", "-"],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        input=crlf_text_checksum.stdout
+                    )
+                    self.assertEqual(result.returncode, 0)
+                    self.assertTrue(': OK' in result.stdout.decode('LATIN-1'))
+
+                    result = subprocess.run(
+                        args = ["../bin/ksum", "-c", "-t", "-"],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        input=lf_text_checksum.stdout
+                    )
+                    self.assertEqual(result.returncode, 0)
+                    self.assertTrue(': OK' in result.stdout.decode('LATIN-1'))
+
+                    result = subprocess.run(
+                        args = ["../bin/ksum", "-c", "-b", "-"],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        input=crlf_bin_checksum.stdout
+                    )
+                    self.assertEqual(result.returncode, 0)
+                    self.assertTrue(': OK' in result.stdout.decode('LATIN-1'))
+
+                    result = subprocess.run(
+                        args = ["../bin/ksum", "-c", "-b", "-"],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        input=lf_bin_checksum.stdout
+                    )
+                    self.assertEqual(result.returncode, 0)
+                    self.assertTrue(': OK' in result.stdout.decode('LATIN-1'))
+
+                finally:
+                    os.unlink(tmp_crlf.name)
+                    os.unlink(tmp_lf.name)
 
 if __name__ == '__main__':
     unittest.main()

@@ -17,23 +17,23 @@
 --  You should have received a copy of the GNU General Public License
 --  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
-with Ada.Text_IO;
+with Ada.Streams;
 with Keccak.Generic_Parallel_Hash;
 with Keccak.Types;
 with Diagnostics;                  use Diagnostics;
 
 generic
    with package ParallelHash is new Keccak.Generic_Parallel_Hash (<>);
-package File_ParallelHash
+package Stream_ParallelHash
 is
 
-   procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
-                        Buffer : in out Keccak.Types.Byte_Array);
+   procedure Hash_Stream (Stream : in out Ada.Streams.Root_Stream_Type'Class;
+                          Buffer : in out Keccak.Types.Byte_Array);
 
-   procedure Check_File (File          : in     Ada.Text_IO.File_Type;
-                         Buffer        : in out Keccak.Types.Byte_Array;
-                         Expected_Hash : in     Keccak.Types.Byte_Array;
-                         Result        :    out Diagnostic);
+   procedure Check_Stream (Stream        : in out Ada.Streams.Root_Stream_Type'Class;
+                           Buffer        : in out Keccak.Types.Byte_Array;
+                           Expected_Hash : in     Keccak.Types.Byte_Array;
+                           Result        :    out Diagnostic);
 
 private
 
@@ -49,4 +49,4 @@ private
                                   Expected_Hash : in     Keccak.Types.Byte_Array;
                                   Result        :    out Diagnostic);
 
-end File_ParallelHash;
+end Stream_ParallelHash;

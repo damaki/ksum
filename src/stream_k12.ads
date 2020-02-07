@@ -17,27 +17,27 @@
 --  You should have received a copy of the GNU General Public License
 --  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
-with Ada.Text_IO;
-with Keccak.Generic_XOF;
+with Ada.Streams;
+with Keccak.Generic_KangarooTwelve;
 with Keccak.Types;
-with Diagnostics;        use Diagnostics;
+with Diagnostics;                   use Diagnostics;
 
 generic
-   with package XOF is new Keccak.Generic_XOF (<>);
-package File_XOF
+   with package K12 is new Keccak.Generic_KangarooTwelve (<>);
+package Stream_K12
 is
 
-   procedure Hash_File (File   : in     Ada.Text_IO.File_Type;
-                        Buffer : in out Keccak.Types.Byte_Array);
+   procedure Hash_Stream (Stream : in out Ada.Streams.Root_Stream_Type'Class;
+                          Buffer : in out Keccak.Types.Byte_Array);
 
-   procedure Check_File (File          : in     Ada.Text_IO.File_Type;
-                         Buffer        : in out Keccak.Types.Byte_Array;
-                         Expected_Hash : in     Keccak.Types.Byte_Array;
-                         Result        :    out Diagnostic);
+   procedure Check_Stream (Stream        : in out Ada.Streams.Root_Stream_Type'Class;
+                           Buffer        : in out Keccak.Types.Byte_Array;
+                           Expected_Hash : in     Keccak.Types.Byte_Array;
+                           Result        :    out Diagnostic);
 
 private
 
-   procedure Print_Output (Ctx    : in out XOF.Context;
+   procedure Print_Output (Ctx    : in out K12.Context;
                            Buffer : in out Keccak.Types.Byte_Array);
 
-end File_XOF;
+end Stream_K12;

@@ -23,7 +23,8 @@ with Ada.Text_IO;           use Ada.Text_IO;
 with Argument_Parser;
 with Configurations;        use Configurations;
 
-with Checksums;
+with Checksums.Generation;
+with Checksums.Verification;
 
 procedure Ksum
 is
@@ -33,9 +34,9 @@ begin
    --  Don't do anything if the help message was displayed.
    if not Configurations.Help_Displayed then
       if Configurations.Check_Mode then
-         Checksums.Check_Checksums;
+         Checksums.Verification.Check_Checksums;
       else
-         Checksums.Print_Checksums;
+         Checksums.Generation.Print_Checksums;
       end if;
    end if;
 

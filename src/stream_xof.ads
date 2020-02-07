@@ -18,19 +18,26 @@
 --  along with ksum.  If not, see <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------------
 with Ada.Streams;
+with Keccak.Generic_XOF;
 with Keccak.Types;
+with Diagnostics;        use Diagnostics;
 
-package Stream_Byte_Arrays
+generic
+   with package XOF is new Keccak.Generic_XOF (<>);
+package Stream_XOF
 is
 
-   procedure Read_Byte_Array
-      (Stream : in out Ada.Streams.Root_Stream_Type'Class;
-       Item   : in out Keccak.Types.Byte_Array;
-       Length :    out Natural);
-   --  Efficiently read bytes from a stream.
-   --
-   --  This procedure will read as many bytes as possible to fill the Item
-   --  buffer. The Length parameter is set to the number of bytes that were
-   --  read.
+   procedure Hash_Stream (Stream : in out Ada.Streams.Root_Stream_Type'Class;
+                          Buffer : in out Keccak.Types.Byte_Array);
 
-end Stream_Byte_Arrays;
+   procedure Check_Stream (Stream        : in out Ada.Streams.Root_Stream_Type'Class;
+                           Buffer        : in out Keccak.Types.Byte_Array;
+                           Expected_Hash : in     Keccak.Types.Byte_Array;
+                           Result        :    out Diagnostic);
+
+private
+
+   procedure Print_Output (Ctx    : in out XOF.Context;
+                           Buffer : in out Keccak.Types.Byte_Array);
+
+end Stream_XOF;
