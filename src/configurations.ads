@@ -102,7 +102,7 @@ is
       SHAKE256            => 256 / 8);
    --  Default output length for each algorith, in bytes.
 
-   Read_Mode      : Read_Modes := Text;
+   Read_Mode      : Read_Modes := Binary;
    --  Sets the read mode for reading files (text or binary mode).
    --  Set using -t or -b
 

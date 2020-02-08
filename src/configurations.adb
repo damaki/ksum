@@ -387,14 +387,14 @@ is
 
       (Short_Name   => To_Unbounded_String ("-t"),
        Long_Name    => To_Unbounded_String ("--text"),
-       Description  => To_Unbounded_String ("read in text mode (default)"),
+       Description  => To_Unbounded_String ("read in text mode"),
        Group        => Argument_Parser.Main_Switches,
        Has_Argument => False,
        Handler      => Set_Read_Mode'Access),
 
       (Short_Name   => To_Unbounded_String ("-b"),
        Long_Name    => To_Unbounded_String ("--binary"),
-       Description  => To_Unbounded_String ("read in binary mode"),
+       Description  => To_Unbounded_String ("read in binary mode (default)"),
        Group        => Argument_Parser.Main_Switches,
        Has_Argument => False,
        Handler      => Set_Read_Mode'Access),
