@@ -184,36 +184,36 @@ stack alignment. See [GCC Bug #54412](https://gcc.gnu.org/bugzilla/show_bug.cgi?
 
 The performance of `ksum` depends on the selected algorithm. The following table
 shows the time taken to process a 1 GiB file filled with data from `/dev/urandom`
-on my machine (64-bit Windows 10 on an AMD Ryzen 7 5800X) as measured by the
+on my machine (64-bit Ubuntu 20.04 on an AMD Ryzen 7 5800X) as measured by the
 `time` program. For these tests, `ksum` was built using GNAT 11.2.0, and with AVX2
 instructions enabled in `libkeccak`.
 
 The table also includes the output of other checksum programs from GNU coreutils
-8.32, marked in **bold**.
+8.30, marked in **bold**.
 
-The fastest out of 3 runs (according to the "real" value from `time`) is shown.
+The fastest out of 3 runs (according to the "user" value from `time`) is shown.
 
 | Program                        | real      | user      | sys      |
 | ------------------------------ | --------- | --------- | -------- |
-| ksum --kangarootwelve bigfile  | 0m0.667s  | 0m0.000s  | 0m0.000s |
-| ksum --parallelhash128 bigfile | 0m0.884s  | 0m0.000s  | 0m0.000s |
-| ksum --parallelhash256 bigfile | 0m1.008s  | 0m0.000s  | 0m0.015s |
-| **sha1sum bigfile**            | 0m0.249s  | 0m1.062s  | 0m0.187s |
-| **md5sum bigfile**             | 0m1.284s  | 0m1.156s  | 0m0.141s |
-| ksum --shake128 bigfile        | 0m1.675s  | 0m0.000s  | 0m0.000s |
-| ksum --cshake128 bigfile       | 0m1.675s  | 0m0.000s  | 0m0.000s |
-| ksum --kmac128 bigfile         | 0m1.686s  | 0m0.000s  | 0m0.015s |
-| ksum --sha3-224 bigfile        | 0m1.903s  | 0m0.000s  | 0m0.015s |
-| ksum --kmac256 bigfile         | 0m1.995s  | 0m0.000s  | 0m0.000s |
-| ksum --shake256 bigfile        | 0m1.996s  | 0m0.000s  | 0m0.015s |
-| ksum --cshake256 bigfile       | 0m1.996s  | 0m0.000s  | 0m0.015s |
-| ksum --sha3-256 bigfile        | 0m1.996s  | 0m0.000s  | 0m0.015s |
-| **sha512sum bigfile**          | 0m2.020s  | 0m1.875s  | 0m0.140s |
-| **sha384sum bigfile**          | 0m2.021s  | 0m1.828s  | 0m0.202s |
-| ksum --sha3-384 bigfile        | 0m2.512s  | 0m0.000s  | 0m0.000s |
-| **sha256sum bigfile**          | 0m2.791s  | 0m2.625s  | 0m0.171s |
-| **sha224sum bigfile**          | 0m2.789s  | 0m2.593s  | 0m0.187s |
-| ksum --sha3-512 bigfile        | 0m3.483s  | 0m0.000s  | 0m0.015s |
+| ksum --kangarootwelve bigfile  | 0m0.513s  | 0m0.444s  | 0m0.069s |
+| ksum --parallelhash128 bigfile | 0m0.736s  | 0m0.667s  | 0m0.070s |
+| ksum --parallelhash256 bigfile | 0m0.863s  | 0m0.843s  | 0m0.020s |
+| **sha1sum bigfile**            | 0m1.112s  | 0m1.032s  | 0m0.080s |
+| **md5sum bigfile**             | 0m1.186s  | 0m1.115s  | 0m0.070s |
+| ksum --shake128 bigfile        | 0m1.623s  | 0m1.503s  | 0m0.120s |
+| ksum --cshake128 bigfile       | 0m1.623s  | 0m1.543s  | 0m0.080s |
+| ksum --kmac128 bigfile         | 0m1.626s  | 0m1.586s  | 0m0.040s |
+| **sha384sum bigfile**          | 0m1.884s  | 0m1.775s  | 0m0.110s |
+| ksum --sha3-224 bigfile        | 0m1.860s  | 0m1.780s  | 0m0.080s |
+| **sha512sum bigfile**          | 0m1.882s  | 0m1.792s  | 0m0.090s |
+| ksum --kmac256 bigfile         | 0m1.961s  | 0m1.871s  | 0m0.090s |
+| ksum --sha3-256 bigfile        | 0m1.960s  | 0m1.880s  | 0m0.080s |
+| ksum --shake256 bigfile        | 0m1.960s  | 0m1.880s  | 0m0.080s |
+| ksum --cshake256 bigfile       | 0m1.965s  | 0m1.885s  | 0m0.080s |
+| ksum --sha3-384 bigfile        | 0m2.492s  | 0m2.422s  | 0m0.070s |
+| **sha256sum bigfile**          | 0m2.764s  | 0m2.654s  | 0m0.110s |
+| **sha224sum bigfile**          | 0m2.767s  | 0m2.706s  | 0m0.060s |
+| ksum --sha3-512 bigfile        | 0m3.488s  | 0m3.447s  | 0m0.040s |
 
 ## Testing
 
