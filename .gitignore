@@ -1,4 +1,5 @@
-obj
-bin
+obj/
+bin/
+alire/
+config/
 __pycache__
-src/version.ads

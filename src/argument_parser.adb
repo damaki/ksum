@@ -67,8 +67,8 @@ is
 
       --  Check if the argument exactly matches the switch name
       --  In this case, the switch is in the format --switch value
-         if (Arg = Switches (J).Short_Name
-             or Arg = Switches (J).Long_Name)
+         if Arg = Switches (J).Short_Name or else
+            Arg = Switches (J).Long_Name
          then
             Match           := True;
 
