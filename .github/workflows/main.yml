@@ -12,8 +12,9 @@ jobs:
     strategy:
       fail-fast: false # Don't stop all the workflows when one of them fails.
       matrix:
-        # List of build configurations to test
+        os: [ubuntu-latest, windows-latest, macos-latest]
         include:
+          # List of build configurations to build & test
           - arch: generic
             simd: none
           - arch: x86_64
@@ -44,6 +45,8 @@ jobs:
           alr build --validation -- \
             -XLIBKECCAK_ARCH=${{ matrix.arch }} \
             -XLIBKECCAK_SIMD=${{ matrix.simd }}
+        # Don't assume the macOS runner is on x86-64
+        if: ${{ matrix.os }} != 'macos-latest' || ${{ matrix.arch }} == generic
 
       # Run all tests
       - name: Run tests
