@@ -276,7 +276,7 @@ is
                   end if;
                end loop Line_Loop;
 
-               if Hash_Last < 1 or Length (Line) <= Hash_Last + 1 then
+               if Hash_Last < 1 or else Length (Line) <= Hash_Last + 1 then
                   Format_Errors := Format_Errors + 1;
                   Format_Warning (Ada.Text_IO.Name (File), Line_Number);
 

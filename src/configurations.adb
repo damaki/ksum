@@ -21,8 +21,7 @@ with Ada.Text_IO;       use Ada.Text_IO;
 with Argument_Parser;   use Argument_Parser;
 with Hex_Strings;       use Hex_Strings;
 with Parallel_Hash;
-
-with Version; --  Generated spec
+with Ksum_Config;
 
 package body Configurations
 is
@@ -340,11 +339,26 @@ is
       pragma Unreferenced (Short_Name);
       pragma Unreferenced (Long_Name);
       pragma Unreferenced (Arg);
+
+      use type Ksum_Config.Build_Profile_Kind;
+
+      Not_Release_Build_Profile : constant Boolean :=
+         Ksum_Config.Build_Profile /= Ksum_Config.release;
+
    begin
       Help_Displayed := True;
 
-      Put ("ksum ");
-      Put_Line (Version.Version_String);
+      Put (Ksum_Config.Crate_Name);
+      Put (" ");
+      Put (Ksum_Config.Crate_Version);
+      if Not_Release_Build_Profile then
+         Put (" (");
+         Put (Ksum_Config.Build_Profile_Kind'Image (Ksum_Config.Build_Profile));
+         Put_Line (")");
+      else
+         New_Line;
+      end if;
+
       Put_Line ("License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>");
       Put_Line ("This is free software: you are free to change and redistribute it.");
       Put_Line ("There is NO WARRANTY, to the extent permitted by law.");
@@ -653,7 +667,9 @@ is
 
          --  We implement the "-" for Standard_Input as a switch, but don't
          --  include it in the list of switches, as it's not really a switch.
-         if Switch_Table (I).Short_Name /= "-" and Switch_Table (I).Group = Group then
+         if Switch_Table (I).Short_Name /= "-" and then
+            Switch_Table (I).Group = Group
+         then
 
             if Switch_Table (I).Short_Name = Null_Unbounded_String then
                Put ("      ");

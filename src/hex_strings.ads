@@ -29,7 +29,7 @@ is
    procedure Parse_Hex_String (Str  : in     String;
                                Data :    out Byte_Array)
      with Pre => (Str'Length mod 2 = 0
-                  and Data'Length = Str'Length / 2);
+                  and then Data'Length = Str'Length / 2);
    --  Parse a hexadecimal string into a byte array.
    --
    --  The input string can contain both upper-case and lower-case hexadecimal
@@ -38,6 +38,6 @@ is
    procedure Parse_Hex_String (Str  : in     Unbounded_String;
                                Data :    out Byte_Array)
      with Pre => (Length (Str) mod 2 = 0
-                  and Data'Length = Length (Str) / 2);
+                  and then Data'Length = Length (Str) / 2);
 
 end Hex_Strings;

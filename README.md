@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.com/damaki/ksum.svg?branch=master)](https://travis-ci.com/damaki/ksum)
-
 # ksum
 
 `ksum` is a program to print checksums using algorithms based on Keccak[1]
@@ -16,7 +14,7 @@ The following algorithms are supported by `ksum`:
   * cSHAKE128 and cSHAKE256
   * KMAC128 and KMAC256
   * ParallelHash128 and ParallelHash256
-* KangarooTwelve as defined by the Keccak authors in [4]
+* KangarooTwelve and MarsupilamiFourteen as defined by the Keccak authors in [4]
 
 ## Usage
 
@@ -163,59 +161,72 @@ The default block size for ParallelHash is 8192 bytes (8 kiB).
 
 ## Building `ksum`
 
-Building `ksum` requires an Ada 2012 compatible compiler which also understands
-SPARK 2014. One such compiler is
-[GNAT Community 2019 from AdaCore](https://libre.adacore.com/download).
+Building `ksum` requires Alire.
 
-`ksum` is built using `gprbuild`, which is included in GNAT Community 2019 or can be
-downloaded separately at the above AdaCore link.
-
-`ksum` is depends on [`libkeccak`](https://github.com/damaki/libkeccak) to
-implement the various algorithms that `ksum` supports (e.g. SHA-3).
-
-To build `libkeccak` and `ksum`:
-  1. `git clone --recursive https://github.com/damaki/ksum.git`
-  2. `cd ksum`
-  3. `cd libkeccak`
-  4. `make install`
-  5. `cd ..`
-  6. `./build.sh`
-
-If you have already built & installed `libkeccak` then you can skip steps 3, 4, and 5.
+```sh
+alr build --release
+```
 
 The `ksum` executable will be placed in the `bin` directory.
+
+`ksum` depends on [libkeccak](https://github.com/damaki/libkeccak). libkeccak
+can be built with SSE2 and AVX2 instructions for better performance of parallel
+hashes, if your platform supports them. To build with AVX2 instructions enabled:
+
+```sh
+alr build --release -- -XLIBKECCAK_ARCH=x86_64 -XLIBKECCAK_SIMD=AVX2
+```
+
+>:warning: `AVX2` is not guaranteed to work on Windows since GCC does not ensure 32-byte
+stack alignment. See [GCC Bug #54412](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=54412)
 
 ## Performance
 
 The performance of `ksum` depends on the selected algorithm. The following table
 shows the time taken to process a 1 GiB file filled with data from `/dev/urandom`
-on my machine (64-bit Linux on an Intel Core i7-2630QM CPU) as measured by the
-`time` program.
-The table also includes the output of other checksum programs for reference
-(marked in **bold**). The fastest out of 3 runs (according to the
-"real" value from `time`) is shown.
+on my machine (64-bit Ubuntu 20.04 on an AMD Ryzen 7 5800X) as measured by the
+`time` program. For these tests, `ksum` was built using GNAT 11.2.0, and with AVX2
+instructions enabled in `libkeccak`.
+
+The table also includes the output of other checksum programs from GNU coreutils
+8.30, marked in **bold**.
+
+The fastest out of 3 runs (according to the "user" value from `time`) is shown.
 
 | Program                        | real      | user      | sys      |
 | ------------------------------ | --------- | --------- | -------- |
-| ksum --kangarootwelve bigfile  | 0m2.053s  | 0m1.904s  | 0m0.148s |
-| **md5sum bigfile**             | 0m2.537s  | 0m2.396s  | 0m0.140s |
-| ksum --parallelhash128 bigfile | 0m3.344s  | 0m3.180s  | 0m0.160s |
-| **sha1sum bigfile**            | 0m3.690s  | 0m3.536s  | 0m0.156s |
-| ksum --parallelhash256 bigfile | 0m4.050s  | 0m3.892s  | 0m0.156s |
-| ksum --shake128 bigfile        | 0m5.217s  | 0m5.028s  | 0m0.188s |
-| ksum --kmac128 bigfile         | 0m5.227s  | 0m5.076s  | 0m0.148s |
-| ksum --cshake128 bigfile       | 0m5.242s  | 0m5.108s  | 0m0.132s |
-| **sha384sum bigfile**          | 0m5.447s  | 0m5.300s  | 0m0.144s |
-| **sha512sum bigfile**          | 0m5.491s  | 0m5.316s  | 0m0.168s |
-| ksum --sha3-224 bigfile        | 0m5.982s  | 0m5.812s  | 0m0.164s |
-| ksum --cshake256 bigfile       | 0m6.315s  | 0m6.132s  | 0m0.180s |
-| ksum --shake256 bigfile        | 0m6.318s  | 0m6.136s  | 0m0.180s |
-| ksum --kmac256 bigfile         | 0m6.328s  | 0m6.208s  | 0m0.116s |
-| ksum --sha3-256 bigfile        | 0m6.333s  | 0m6.176s  | 0m0.152s |
-| ksum --sha3-384 bigfile        | 0m8.094s  | 0m7.976s  | 0m0.116s |
-| **sha256sum bigfile**          | 0m8.276s  | 0m8.124s  | 0m0.148s |
-| **sha224sum bigfile**          | 0m8.296s  | 0m8.124s  | 0m0.168s |
-| ksum --sha3-512 bigfile        | 0m11.437s | 0m11.260s | 0m0.172s |
+| ksum --kangarootwelve bigfile  | 0m0.513s  | 0m0.444s  | 0m0.069s |
+| ksum --parallelhash128 bigfile | 0m0.736s  | 0m0.667s  | 0m0.070s |
+| ksum --parallelhash256 bigfile | 0m0.863s  | 0m0.843s  | 0m0.020s |
+| **sha1sum bigfile**            | 0m1.112s  | 0m1.032s  | 0m0.080s |
+| **md5sum bigfile**             | 0m1.186s  | 0m1.115s  | 0m0.070s |
+| ksum --shake128 bigfile        | 0m1.623s  | 0m1.503s  | 0m0.120s |
+| ksum --cshake128 bigfile       | 0m1.623s  | 0m1.543s  | 0m0.080s |
+| ksum --kmac128 bigfile         | 0m1.626s  | 0m1.586s  | 0m0.040s |
+| **sha384sum bigfile**          | 0m1.884s  | 0m1.775s  | 0m0.110s |
+| ksum --sha3-224 bigfile        | 0m1.860s  | 0m1.780s  | 0m0.080s |
+| **sha512sum bigfile**          | 0m1.882s  | 0m1.792s  | 0m0.090s |
+| ksum --kmac256 bigfile         | 0m1.961s  | 0m1.871s  | 0m0.090s |
+| ksum --sha3-256 bigfile        | 0m1.960s  | 0m1.880s  | 0m0.080s |
+| ksum --shake256 bigfile        | 0m1.960s  | 0m1.880s  | 0m0.080s |
+| ksum --cshake256 bigfile       | 0m1.965s  | 0m1.885s  | 0m0.080s |
+| ksum --sha3-384 bigfile        | 0m2.492s  | 0m2.422s  | 0m0.070s |
+| **sha256sum bigfile**          | 0m2.764s  | 0m2.654s  | 0m0.110s |
+| **sha224sum bigfile**          | 0m2.767s  | 0m2.706s  | 0m0.060s |
+| ksum --sha3-512 bigfile        | 0m3.488s  | 0m3.447s  | 0m0.040s |
+
+## Testing
+
+The test suite runs `ksum` against a set of test vectors in `tests/vectors/`,
+and tests of the various CLI options, e.g. quiet mode.
+
+Running the tests requires Python 3. To run the tests:
+
+```
+alr build --validation
+cd tests
+python run_tests.py
+```
 
 ## References
 

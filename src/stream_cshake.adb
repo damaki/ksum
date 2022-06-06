@@ -145,8 +145,8 @@ is
                           Buffer : in out Keccak.Types.Byte_Array)
    is
    begin
-      if (Configurations.Customization = Null_Unbounded_String
-          and Configurations.Function_Name = Null_Unbounded_String)
+      if Configurations.Customization = Null_Unbounded_String and then
+         Configurations.Function_Name = Null_Unbounded_String
       then
          --  In the case where both the customization and function name strings
          --  are the empty strings, cSHAKE is equivalent to SHAKE.
@@ -168,8 +168,8 @@ is
                            Result        :    out Diagnostic)
    is
    begin
-      if (Configurations.Customization = Null_Unbounded_String
-          and Configurations.Function_Name = Null_Unbounded_String)
+      if Configurations.Customization = Null_Unbounded_String and then
+         Configurations.Function_Name = Null_Unbounded_String
       then
          --  In the case where both the customization and function name strings
          --  are the empty strings, cSHAKE is equivalent to SHAKE.

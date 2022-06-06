@@ -1,0 +1,19 @@
+name = "ksum"
+description = "Generate checksums with Keccak-based algorithms"
+version = "1.1.0-dev"
+licenses = "GPL-3.0-or-later"
+website = "https://github.com/damaki/ksum"
+tags = [
+    "cryptography", "security", "hash", "sha3", "keccak",
+    "shake", "cshake", "kmac", "tuplehash", "parallelhash",
+    "kangarootwelve"
+]
+
+authors = ["Daniel King"]
+maintainers = ["Daniel King <damaki.gh@gmail.com>"]
+maintainers-logins = ["damaki"]
+
+executables = ["ksum"]
+
+[[depends-on]]
+libkeccak = "^3.0.0"

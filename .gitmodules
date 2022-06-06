@@ -1,3 +1,0 @@
-[submodule "libkeccak"]
-	path = libkeccak
-	url = https://github.com/damaki/libkeccak.git
