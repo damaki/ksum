@@ -1,5 +1,7 @@
 on:                    # Run the workflow for each of the following event:
   push:                # - A branch is pushed or updated.
+    branches:
+      - master
   pull_request:        # - A pull-request is openned or updated.
   workflow_dispatch:   # - A manual run of the workflow is requested from the GitHub web interface.
   release:
@@ -30,7 +32,13 @@ jobs:
         with:
           version: 1.2.0
 
-      # Build the project using the validation build profile to enforce static analysis and coding style.
+      # Install and setup Python
+      - uses: actions/setup-python@v3
+        with:
+          python-version: '3.x'
+
+      # Build the project using the validation build profile to enforce
+      # static analysis and coding style.
       - name: Build ksum
         run: |
           alr build --validation -- \
@@ -39,9 +47,6 @@ jobs:
 
       # Run all tests
       - name: Run tests
-        uses: actions/setup-python@v3
-          with:
-            python-version: '3.x'
         run: |
           cd tests
           python run_tests.py
