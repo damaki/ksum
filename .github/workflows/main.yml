@@ -20,6 +20,8 @@ jobs:
             simd: SSE2
           - arch: generic
             simd: AVX2
+          - os: macos-latest
+            simd: AVX2
 
     runs-on: ${{ matrix.os }}
 
@@ -41,9 +43,7 @@ jobs:
       # static analysis and coding style.
       - name: Build ksum
         run: |
-          alr build --validation -- \
-            -XLIBKECCAK_ARCH=${{ matrix.arch }} \
-            -XLIBKECCAK_SIMD=${{ matrix.simd }}
+          alr build --validation -- -XLIBKECCAK_ARCH=${{ matrix.arch }} -XLIBKECCAK_SIMD=${{ matrix.simd }}
 
       # Run all tests
       - name: Run tests
