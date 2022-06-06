@@ -17,6 +17,3 @@ executables = ["ksum"]
 
 [[depends-on]]
 libkeccak = "^3.0.0"
-
-[[pins]]
-libkeccak = { path = "../libkeccak" }
