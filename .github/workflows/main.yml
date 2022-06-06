@@ -16,10 +16,15 @@ jobs:
         arch: [generic, x86_64]
         simd: [none, SSE2, AVX2]
         exclude:
+          # Don't try to build SSE2/AVX2 on 'generic' architecture.
           - arch: generic
             simd: SSE2
           - arch: generic
             simd: AVX2
+          # x86_64+none is the same as generic+none
+          - arch: x86_64
+            simd: none
+          # AVX2 is not available on macOS runner.
           - os: macos-latest
             simd: AVX2
 
