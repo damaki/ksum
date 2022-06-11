@@ -1,0 +1,57 @@
+on:                    # Run the workflow for each of the following event:
+  push:                # - A branch is pushed or updated.
+    branches:
+      - master
+  pull_request:        # - A pull-request is openned or updated.
+  workflow_dispatch:   # - A manual run of the workflow is requested from the GitHub web interface.
+  release:
+    types: [created]   # - A release is created.
+
+jobs:
+  build-and-test:
+    strategy:
+      fail-fast: false # Don't stop all the workflows when one of them fails.
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        arch: [generic, x86_64]
+        simd: [none, SSE2, AVX2]
+        exclude:
+          # Don't try to build SSE2/AVX2 on 'generic' architecture.
+          - arch: generic
+            simd: SSE2
+          - arch: generic
+            simd: AVX2
+          # x86_64+none is the same as generic+none
+          - arch: x86_64
+            simd: none
+          # AVX2 is not available on macOS runner.
+          - os: macos-latest
+            simd: AVX2
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      # Checkout the repository
+      - uses: actions/checkout@v2
+
+      # Install and setup Alire package manager
+      - uses: alire-project/setup-alire@v1
+        with:
+          version: 1.2.0
+
+      # Install and setup Python
+      - uses: actions/setup-python@v3
+        with:
+          python-version: '3.x'
+
+      # Build the project using the validation build profile to enforce
+      # static analysis and coding style.
+      - name: Build ksum
+        run: |
+          alr build --validation -- -XLIBKECCAK_ARCH=${{ matrix.arch }} -XLIBKECCAK_SIMD=${{ matrix.simd }}
+
+      # Run all tests
+      - name: Run tests
+        run: |
+          cd tests
+          python run_tests.py
